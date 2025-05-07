@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -99,9 +100,7 @@ export default function POSPage() {
   });
 
   const handlePrintReceipt = () => {
-    setTimeout(() => {
-      actualPrintHandler?.();
-    }, 0);
+    actualPrintHandler?.();
   };
 
   const filteredInventory = useMemo(() => {
@@ -502,3 +501,4 @@ export default function POSPage() {
     </div>
   );
 }
+
