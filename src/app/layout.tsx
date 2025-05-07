@@ -1,12 +1,13 @@
 
 import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
+// import { GeistMono } from 'geist/font/mono'; // Removed as it's no longer applied to body globally. Import if used elsewhere.
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
-const geistSans = GeistSans;
-const geistMono = GeistMono;
+// Removed redundant const declarations:
+// const geistSans = GeistSans;
+// const geistMono = GeistMono;
 
 export const metadata: Metadata = {
   title: 'SwiftStock - Sales & Inventory',
@@ -20,7 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
+      <body 
+        className={`${GeistSans.className} antialiased`} 
+        suppressHydrationWarning
+      >
         {children}
         <Toaster />
       </body>
