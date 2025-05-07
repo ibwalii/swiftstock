@@ -1,3 +1,4 @@
+
 export interface InvoiceItem {
   productId: string;
   name: string;
@@ -15,6 +16,7 @@ export interface Invoice {
   items: InvoiceItem[];
   totalAmount: number;
   // Optional fields
-  // paymentMethod?: string;
+  paymentMethod?: string; // Added optional paymentMethod
   // notes?: string;
 }
+

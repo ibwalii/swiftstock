@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -20,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Trash2, ShoppingCart, DollarSign, UserCircle, Search, MonitorPlay, Printer, MinusCircle, Barcode, AlertCircle, CheckCircle } from 'lucide-react';
+import { PlusCircle, Trash2, ShoppingCart, DollarSign, UserCircle, Search, MonitorPlay, Printer, MinusCircle, Barcode, AlertCircle, CheckCircle, CreditCard } from 'lucide-react'; // Added CreditCard for Checkout
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -29,66 +28,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from '@/components/ui/dialog';
-import { CalculatorModal } from '@/components/app/calculator-modal'; // Renamed from Calculator
+import { CalculatorModal } from '@/components/app/calculator-modal';
 import { CustomerDisplayModal } from '@/components/app/customer-display-modal';
+import { CheckoutModal } from '@/components/app/checkout-modal'; // New Checkout Modal
+import { ReceiptPreview } from '@/components/app/receipt-preview'; // New Receipt Preview Component
 import { useReactToPrint } from 'react-to-print';
-import { Logo } from '@/components/app/logo';
 
-interface CartItem extends InventoryItem {
+
+// Export CartItem to be used by CheckoutModal
+export interface CartItem extends InventoryItem {
   cartQuantity: number;
 }
-
-const ReceiptToPrint = React.forwardRef<HTMLDivElement, { invoice: Invoice | null }>(({ invoice }, ref) => {
-  if (!invoice) return null;
-  return (
-    <div ref={ref} className="p-6 bg-white text-black font-sans text-xs w-[288px]"> {/* Standard 3-inch receipt width approx 72mm or 288px at 96dpi */}
-      <div className="text-center mb-4">
-        <div className="flex justify-center my-2"><Logo /></div>
-        <h2 className="text-lg font-bold">Sale Receipt</h2>
-        <p>Date: {new Date(invoice.date).toLocaleDateString()} {new Date(invoice.date).toLocaleTimeString()}</p>
-        <p>Invoice #: {invoice.invoiceNumber}</p>
-      </div>
-      
-      <div className="mb-2">
-        <h3 className="text-sm font-semibold border-b border-dashed pb-0.5 mb-1">Customer: {invoice.customerName}</h3>
-      </div>
-
-      <table className="w-full mb-2 text-xs">
-        <thead>
-          <tr className="border-b border-dashed">
-            <th className="text-left py-0.5 pr-0.5 font-semibold">Item</th>
-            <th className="text-center py-0.5 px-0.5 font-semibold">Qty</th>
-            <th className="text-right py-0.5 px-0.5 font-semibold">Price</th>
-            <th className="text-right py-0.5 pl-0.5 font-semibold">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoice.items.map(item => (
-            <tr key={item.productId}>
-              <td className="py-0.5 pr-0.5 ">{item.name}</td>
-              <td className="text-center py-0.5 px-0.5">{item.quantity}</td>
-              <td className="text-right py-0.5 px-0.5">${item.price.toFixed(2)}</td>
-              <td className="text-right py-0.5 pl-0.5">${item.subtotal.toFixed(2)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="mt-3 pt-2 border-t border-dashed text-right">
-        <p className="text-sm font-bold">TOTAL: ${invoice.totalAmount.toFixed(2)}</p>
-      </div>
-
-      <div className="text-center mt-4 text-xs">
-        <p>Thank you for your purchase!</p>
-        <p>SwiftStock POS</p>
-      </div>
-    </div>
-  );
-});
-ReceiptToPrint.displayName = 'ReceiptToPrint';
-
 
 export default function POSPage() {
   const { inventory, updateItemQuantity: updateInventoryQuantity, getItemById, getItemByBarcode } = useInventory();
@@ -99,21 +50,23 @@ export default function POSPage() {
   const [customerName, setCustomerName] = useState('Walk-in Customer');
   const [searchTerm, setSearchTerm] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
+  
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false); // State for new checkout modal
+
   const [isCustomerDisplayOpen, setIsCustomerDisplayOpen] = useState(false);
   const [customerDisplayWindow, setCustomerDisplayWindow] = useState<Window | null>(null);
   const [lastInvoice, setLastInvoice] = useState<Invoice | null>(null);
 
-  const receiptRef = useRef<HTMLDivElement>(null);
+  const receiptPrintRef = useRef<HTMLDivElement>(null); // Ref for the actual printable receipt content
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const successAudioRef = useRef<HTMLAudioElement | null>(null);
   const errorAudioRef = useRef<HTMLAudioElement | null>(null);
 
 
   useEffect(() => {
-    // Initialize audio elements on client side
     if (typeof window !== 'undefined') {
-        successAudioRef.current = new Audio('/sounds/success.mp3'); // Create a /public/sounds directory
+        successAudioRef.current = new Audio('/sounds/success.mp3');
         errorAudioRef.current = new Audio('/sounds/error.mp3');
     }
   }, []);
@@ -129,8 +82,8 @@ export default function POSPage() {
   };
 
 
-  const handlePrint = useReactToPrint({
-    content: () => receiptRef.current,
+  const handlePrintReceipt = useReactToPrint({
+    content: () => receiptPrintRef.current,
     documentTitle: `Receipt-${lastInvoice?.invoiceNumber || 'current-sale'}`,
     onAfterPrint: () => {
       toast({ title: 'Receipt Printed', description: 'The receipt has been sent to the printer.'});
@@ -214,8 +167,7 @@ export default function POSPage() {
       toast({
         title: "Item Added",
         description: `${item.name} added to cart via barcode.`,
-        className: 'bg-green-500 text-white',
-        icon: <CheckCircle className="h-5 w-5" />
+        icon: <CheckCircle className="h-5 w-5 text-green-500" /> // Using text color for icon
       });
       playSound('success');
       setBarcodeInput(''); 
@@ -237,7 +189,7 @@ export default function POSPage() {
     }
   };
 
-  const handleProcessSale = () => {
+  const handleOpenCheckout = () => {
     if (cart.length === 0) {
       toast({ title: 'Empty Cart', description: 'Please add items to the cart to process a sale.', variant: 'destructive' });
       return;
@@ -246,7 +198,11 @@ export default function POSPage() {
        toast({ title: 'Customer Name Required', description: 'Please enter a customer name.', variant: 'destructive' });
        return;
     }
+    setIsCheckoutModalOpen(true);
+  };
 
+  const handleConfirmSale = (paymentMethod: string) => {
+    // This function is called from CheckoutModal
     const invoiceItems: InvoiceItem[] = cart.map((item) => ({
       productId: item.id,
       name: item.name,
@@ -265,20 +221,20 @@ export default function POSPage() {
         customerName,
         items: invoiceItems,
         totalAmount: cartTotal,
+        // paymentMethod: paymentMethod, // Store payment method if your Invoice type supports it
       });
       
       setLastInvoice(newInvoice);
-      setIsReceiptDialogOpen(true);
+      setIsCheckoutModalOpen(false); // Close checkout modal
+      setIsReceiptDialogOpen(true); // Open final receipt dialog for printing
       
-      // If customer display window is open, update it
       if (customerDisplayWindow && !customerDisplayWindow.closed) {
         customerDisplayWindow.postMessage({ type: 'SALE_COMPLETE', invoice: newInvoice }, '*');
       } else {
-        setIsCustomerDisplayOpen(false); // Close modal if window was not used or closed
+        setIsCustomerDisplayOpen(false);
       }
 
-
-      toast({ title: 'Sale Processed!', description: `Invoice ${newInvoice.invoiceNumber} created for ${customerName}.` });
+      toast({ title: 'Sale Processed!', description: `Invoice ${newInvoice.invoiceNumber} created for ${customerName} via ${paymentMethod}.` });
       setCart([]);
       setSearchTerm('');
       setBarcodeInput('');
@@ -287,13 +243,13 @@ export default function POSPage() {
     }
   };
 
+
   const openCustomerDisplayWindow = () => {
     const features = 'width=800,height=600,resizable,scrollbars=yes,status=yes';
     const newWindow = window.open('/customer-display', '_blank', features);
     setCustomerDisplayWindow(newWindow);
-    setIsCustomerDisplayOpen(false); // Close modal if window is opened
+    setIsCustomerDisplayOpen(false); 
 
-    // Send initial cart data
     if (newWindow) {
         newWindow.onload = () => {
             newWindow.postMessage({ type: 'UPDATE_CART', cartItems: cart, totalAmount: cartTotal }, '*');
@@ -301,7 +257,6 @@ export default function POSPage() {
     }
   };
 
-  // Update customer display window when cart changes
   useEffect(() => {
     if (customerDisplayWindow && !customerDisplayWindow.closed) {
         customerDisplayWindow.postMessage({ type: 'UPDATE_CART', cartItems: cart, totalAmount: cartTotal }, '*');
@@ -310,9 +265,11 @@ export default function POSPage() {
 
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-theme(spacing.32))] max-h-[calc(100vh-theme(spacing.32))] overflow-hidden">
-      <div className="lg:col-span-4 flex flex-col space-y-3 max-h-full">
-        <Card className="flex-grow flex flex-col overflow-hidden">
+    // Removed fixed height and overflow-hidden from this main div
+    // The AppLayout's main container will handle overall page scrolling if needed
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="lg:col-span-4 flex flex-col space-y-3 max-h-full"> {/* max-h-full allows it to take height from parent */}
+        <Card className="flex-grow flex flex-col overflow-hidden"> {/* This card will manage its internal overflow */}
           <CardHeader className="p-3 border-b">
             <CardTitle className="text-lg">Current Sale</CardTitle>
             <div className="mt-1.5">
@@ -328,7 +285,7 @@ export default function POSPage() {
               />
             </div>
           </CardHeader>
-          <CardContent className="flex-grow overflow-hidden p-0">
+          <CardContent className="flex-grow overflow-hidden p-0"> {/* flex-grow allows ScrollArea to expand */}
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
                 <ShoppingCart size={36} className="mb-2" />
@@ -336,7 +293,7 @@ export default function POSPage() {
                 <p className="text-xs">Scan a barcode or add products from the right.</p>
               </div>
             ) : (
-              <ScrollArea className="h-full">
+              <ScrollArea className="h-full"> {/* h-full makes ScrollArea take available space in CardContent */}
                 <Table className="text-xs">
                   <TableHeader>
                     <TableRow>
@@ -386,8 +343,8 @@ export default function POSPage() {
             </div>
            )}
           <div className="p-3 border-t space-y-1.5">
-            <Button size="default" className="w-full font-semibold h-9 text-sm" onClick={handleProcessSale} disabled={cart.length === 0 || !customerName.trim()}>
-              <DollarSign size={16} className="mr-1.5" /> Process Sale
+            <Button size="default" className="w-full font-semibold h-9 text-sm" onClick={handleOpenCheckout} disabled={cart.length === 0 || !customerName.trim()}>
+              <CreditCard size={16} className="mr-1.5" /> Checkout 
             </Button>
             <div className="grid grid-cols-2 gap-1.5">
                 <Button size="default" variant="outline" className="w-full h-9 text-sm" onClick={() => setIsCustomerDisplayOpen(true)} disabled={cart.length === 0}>
@@ -402,8 +359,8 @@ export default function POSPage() {
         </Card>
       </div>
 
-      <div className="lg:col-span-8 flex flex-col max-h-full">
-        <Card className="flex-grow flex flex-col overflow-hidden">
+      <div className="lg:col-span-8 flex flex-col max-h-full"> {/* max-h-full for this column too */}
+        <Card className="flex-grow flex flex-col overflow-hidden"> {/* Card manages its internal overflow */}
           <CardHeader className="p-3 border-b space-y-2">
             <CardTitle className="text-lg">Available Products</CardTitle>
              <div className="flex gap-2">
@@ -432,7 +389,7 @@ export default function POSPage() {
               />
             </div>
           </CardHeader>
-          <CardContent className="flex-grow overflow-hidden p-2">
+          <CardContent className="flex-grow overflow-hidden p-2"> {/* flex-grow for ScrollArea */}
             {filteredInventory.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
                 <ShoppingCart size={40} className="mb-3" />
@@ -440,7 +397,7 @@ export default function POSPage() {
                 <p className="text-xs">Adjust search or check inventory.</p>
               </div>
             ) : (
-              <ScrollArea className="h-full">
+              <ScrollArea className="h-full"> {/* h-full for ScrollArea */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                   {filteredInventory.map((item) => (
                     <Card key={item.id} className="flex flex-col overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-150 cursor-pointer group" onClick={() => addToCart(item)}>
@@ -482,6 +439,7 @@ export default function POSPage() {
         </Card>
       </div>
 
+      {/* Dialog for Printing Receipt AFTER sale is confirmed */}
       {lastInvoice && (
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
         <DialogContent className="sm:max-w-xs">
@@ -492,33 +450,21 @@ export default function POSPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="hidden">
-            <ReceiptToPrint invoice={lastInvoice} ref={receiptRef} />
+          {/* This div will be hidden but used by react-to-print */}
+          <div className="hidden"> 
+            <ReceiptPreview ref={receiptPrintRef} invoice={lastInvoice} />
           </div>
 
+           {/* Visible preview in the dialog */}
           <div className="p-4 border-y max-h-[50vh] overflow-y-auto text-xs">
-            <p><strong>Customer:</strong> {lastInvoice.customerName}</p>
-            <p><strong>Date:</strong> {new Date(lastInvoice.date).toLocaleDateString()}</p>
-            <h4 className="font-semibold mt-1.5 border-t pt-1.5">Items:</h4>
-            <ul className="space-y-0.5 my-1">
-                {lastInvoice.items.map(item => (
-                <li key={item.productId} className="flex justify-between">
-                    <span>{item.name} (x{item.quantity})</span>
-                    <span>${item.subtotal.toFixed(2)}</span>
-                </li>
-                ))}
-            </ul>
-            <div className="border-t pt-1.5 mt-1.5 flex justify-between font-bold">
-              <span>Total:</span>
-              <span>${lastInvoice.totalAmount.toFixed(2)}</span>
-            </div>
+              <ReceiptPreview invoice={lastInvoice} />
           </div>
           
           <DialogFooter className="p-4 flex-col sm:flex-col sm:space-x-0 gap-2">
-            <Button onClick={handlePrint} className="w-full">
+            <Button onClick={handlePrintReceipt} className="w-full">
                 <Printer size={14} className="mr-2" /> Print Receipt
             </Button>
-            <Button variant="outline" onClick={() => { setIsReceiptDialogOpen(false); }}  className="w-full">
+            <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}  className="w-full">
                 Close
             </Button>
           </DialogFooter>
@@ -532,7 +478,15 @@ export default function POSPage() {
         cartItems={cart}
         totalAmount={cartTotal}
       />
+
+      <CheckoutModal
+        isOpen={isCheckoutModalOpen}
+        onClose={() => setIsCheckoutModalOpen(false)}
+        cartItems={cart}
+        totalAmount={cartTotal}
+        customerName={customerName}
+        onConfirmSale={handleConfirmSale}
+      />
     </div>
   );
 }
-
