@@ -20,14 +20,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle, Edit2, Trash2, PackageSearch } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const initialFormState: Omit<InventoryItem, 'id'> = {
   name: '',
@@ -39,7 +38,7 @@ const initialFormState: Omit<InventoryItem, 'id'> = {
 
 export default function InventoryPage() {
   const { inventory, addItem, updateItem, deleteItem } = useInventory();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [formData, setFormData] = useState<Omit<InventoryItem, 'id'>>(initialFormState);
   const { toast } = useToast();
@@ -54,6 +53,10 @@ export default function InventoryPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name || !formData.sku) {
+      toast({ title: "Validation Error", description: "Name and SKU are required.", variant: "destructive"});
+      return;
+    }
     if (editingItem) {
       updateItem({ ...editingItem, ...formData });
       toast({ title: 'Item Updated', description: `${formData.name} has been updated successfully.` });
@@ -61,7 +64,7 @@ export default function InventoryPage() {
       addItem(formData);
       toast({ title: 'Item Added', description: `${formData.name} has been added successfully.` });
     }
-    setIsDialogOpen(false);
+    setIsFormDialogOpen(false);
     setEditingItem(null);
     setFormData(initialFormState);
   };
@@ -69,25 +72,23 @@ export default function InventoryPage() {
   const openAddDialog = () => {
     setEditingItem(null);
     setFormData(initialFormState);
-    setIsDialogOpen(true);
+    setIsFormDialogOpen(true);
   };
 
   const openEditDialog = (item: InventoryItem) => {
     setEditingItem(item);
     setFormData({ name: item.name, sku: item.sku, quantity: item.quantity, price: item.price, imageUrl: item.imageUrl || '' });
-    setIsDialogOpen(true);
+    setIsFormDialogOpen(true);
   };
 
-  const handleDelete = (itemId: string, itemName: string) => {
-    if (window.confirm(`Are you sure you want to delete ${itemName}?`)) {
-      deleteItem(itemId);
-      toast({ title: 'Item Deleted', description: `${itemName} has been deleted.`, variant: 'destructive' });
-    }
+  const handleDeleteConfirm = (itemId: string, itemName: string) => {
+    deleteItem(itemId);
+    toast({ title: 'Item Deleted', description: `${itemName} has been deleted.`, variant: 'destructive' });
   };
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-2xl">Inventory Management</CardTitle>
@@ -116,7 +117,7 @@ export default function InventoryPage() {
                 <TableHead>SKU</TableHead>
                 <TableHead className="text-right">Quantity</TableHead>
                 <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right w-[120px]">Actions</TableHead>
+                <TableHead className="text-center w-[130px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -124,11 +125,11 @@ export default function InventoryPage() {
                 <TableRow key={item.id}>
                   <TableCell>
                     <Image
-                      src={item.imageUrl || `https://picsum.photos/seed/${item.id}/60/60`}
+                      src={item.imageUrl || `https://picsum.photos/seed/${item.sku || item.id}/60/60`}
                       alt={item.name}
                       width={60}
                       height={60}
-                      className="rounded-md object-cover"
+                      className="rounded-md object-cover shadow-sm"
                       data-ai-hint="product image"
                     />
                   </TableCell>
@@ -136,13 +137,31 @@ export default function InventoryPage() {
                   <TableCell>{item.sku}</TableCell>
                   <TableCell className="text-right">{item.quantity}</TableCell>
                   <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)} className="mr-2">
+                  <TableCell className="text-center">
+                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)} className="mr-1 hover:text-primary">
                       <Edit2 size={16} />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id, item.name)} className="text-destructive hover:text-destructive">
-                      <Trash2 size={16} />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80">
+                          <Trash2 size={16} />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the item "{item.name}" from your inventory.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteConfirm(item.id, item.name)} className="bg-destructive hover:bg-destructive/90">
+                            Yes, delete item
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
@@ -152,7 +171,7 @@ export default function InventoryPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>{editingItem ? 'Edit Item' : 'Add New Item'}</DialogTitle>
@@ -179,12 +198,10 @@ export default function InventoryPage() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="imageUrl" className="text-right">Image URL</Label>
-              <Input id="imageUrl" name="imageUrl" value={formData.imageUrl} onChange={handleInputChange} className="col-span-3" placeholder="Optional: e.g., https://picsum.photos/200" />
+              <Input id="imageUrl" name="imageUrl" value={formData.imageUrl} onChange={handleInputChange} className="col-span-3" placeholder="e.g., https://picsum.photos/seed/SKU/200" />
             </div>
             <DialogFooter>
-              <DialogClose asChild>
-                 <Button type="button" variant="outline">Cancel</Button>
-              </DialogClose>
+                 <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
               <Button type="submit">{editingItem ? 'Save Changes' : 'Add Item'}</Button>
             </DialogFooter>
           </form>

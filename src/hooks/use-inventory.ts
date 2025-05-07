@@ -2,15 +2,23 @@
 
 import type { InventoryItem } from '@/types/inventory';
 import { useLocalStorage } from './use-local-storage';
-import { v4 as uuidv4 } from 'uuid'; // Needs npm install uuid @types/uuid
+import { v4 as uuidv4 } from 'uuid';
 
 const INVENTORY_STORAGE_KEY = 'swiftstock-inventory';
 
 const initialInventory: InventoryItem[] = [
-  { id: uuidv4(), name: 'Wireless Mouse', sku: 'WM-001', quantity: 50, price: 25.99, imageUrl: 'https://picsum.photos/seed/mouse/200/200' },
-  { id: uuidv4(), name: 'Mechanical Keyboard', sku: 'MK-002', quantity: 30, price: 79.50, imageUrl: 'https://picsum.photos/seed/keyboard/200/200' },
-  { id: uuidv4(), name: 'USB-C Hub', sku: 'UCH-003', quantity: 75, price: 32.00, imageUrl: 'https://picsum.photos/seed/hub/200/200' },
-  { id: uuidv4(), name: '27-inch Monitor', sku: 'MON-004', quantity: 15, price: 299.99, imageUrl: 'https://picsum.photos/seed/monitor/200/200' },
+  { id: uuidv4(), name: 'Wireless Mouse', sku: 'WM-001', quantity: 50, price: 25.99, imageUrl: 'https://picsum.photos/seed/WM-001/200/150' },
+  { id: uuidv4(), name: 'Mechanical Keyboard', sku: 'MK-002', quantity: 30, price: 79.50, imageUrl: 'https://picsum.photos/seed/MK-002/200/150' },
+  { id: uuidv4(), name: 'USB-C Hub', sku: 'UCH-003', quantity: 75, price: 32.00, imageUrl: 'https://picsum.photos/seed/UCH-003/200/150' },
+  { id: uuidv4(), name: '27-inch Monitor', sku: 'MON-004', quantity: 15, price: 299.99, imageUrl: 'https://picsum.photos/seed/MON-004/200/150' },
+  { id: uuidv4(), name: 'Laptop Stand', sku: 'LS-005', quantity: 40, price: 19.99, imageUrl: 'https://picsum.photos/seed/LS-005/200/150' },
+  { id: uuidv4(), name: 'Webcam HD 1080p', sku: 'WC-006', quantity: 25, price: 45.00, imageUrl: 'https://picsum.photos/seed/WC-006/200/150' },
+  { id: uuidv4(), name: 'Bluetooth Speaker', sku: 'BTS-007', quantity: 60, price: 59.90, imageUrl: 'https://picsum.photos/seed/BTS-007/200/150' },
+  { id: uuidv4(), name: 'Gaming Headset', sku: 'GH-008', quantity: 20, price: 89.75, imageUrl: 'https://picsum.photos/seed/GH-008/200/150' },
+  { id: uuidv4(), name: 'Ergonomic Chair', sku: 'EC-009', quantity: 10, price: 249.00, imageUrl: 'https://picsum.photos/seed/EC-009/200/150' },
+  { id: uuidv4(), name: 'Desk Lamp LED', sku: 'DL-010', quantity: 55, price: 22.50, imageUrl: 'https://picsum.photos/seed/DL-010/200/150' },
+  { id: uuidv4(), name: 'Portable SSD 1TB', sku: 'SSD-011', quantity: 33, price: 119.99, imageUrl: 'https://picsum.photos/seed/SSD-011/200/150' },
+  { id: uuidv4(), name: 'Smartphone Gimbal', sku: 'SG-012', quantity: 18, price: 75.00, imageUrl: 'https://picsum.photos/seed/SG-012/200/150' },
 ];
 
 
@@ -22,36 +30,55 @@ export function useInventory() {
 
   const addItem = (item: Omit<InventoryItem, 'id'>) => {
     const newItem = { ...item, id: uuidv4() };
-    setInventory([...inventory, newItem]);
+    setInventory((prevInventory) => [...prevInventory, newItem]);
     return newItem;
   };
 
   const updateItem = (updatedItem: InventoryItem) => {
-    setInventory(
-      inventory.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+    setInventory((prevInventory) =>
+      prevInventory.map((item) => (item.id === updatedItem.id ? updatedItem : item))
     );
     return updatedItem;
   };
   
   const updateItemQuantity = (itemId: string, quantityChange: number) => {
-    const item = inventory.find(i => i.id === itemId);
-    if (item) {
-      const newQuantity = item.quantity + quantityChange;
-      if (newQuantity < 0) {
-        throw new Error("Quantity cannot be negative.");
+    setInventory((prevInventory) => {
+      const itemIndex = prevInventory.findIndex(i => i.id === itemId);
+      if (itemIndex === -1) {
+        console.error("Item not found for quantity update.");
+        throw new Error("Item not found in inventory for quantity update.");
       }
+      
+      const item = prevInventory[itemIndex];
+      const newQuantity = item.quantity + quantityChange;
+
+      if (newQuantity < 0) {
+        console.warn(`Attempted to set quantity below zero for ${item.name}. Setting to 0.`);
+        const updatedItem = { ...item, quantity: 0 };
+         const newInventory = [...prevInventory];
+        newInventory[itemIndex] = updatedItem;
+        // Not throwing error here to allow sale to proceed if it was a deduction
+        // but UI should prevent negative quantities from being *set* directly.
+        // For sale processing, this might mean item is now out of stock.
+        return newInventory;
+      }
+      
       const updatedItem = { ...item, quantity: newQuantity };
-      updateItem(updatedItem);
-      return updatedItem;
-    }
-    throw new Error("Item not found.");
+      const newInventory = [...prevInventory];
+      newInventory[itemIndex] = updatedItem;
+      return newInventory;
+    });
+    // Note: returning the updated item might be complex here due to async nature of setInventory.
+    // The hook consumer should rely on the updated `inventory` state.
   };
 
   const deleteItem = (itemId: string) => {
-    setInventory(inventory.filter((item) => item.id !== itemId));
+    setInventory((prevInventory) => prevInventory.filter((item) => item.id !== itemId));
   };
 
-  const getItemById = (itemId: string) => {
+  const getItemById = (itemId: string): InventoryItem | undefined => {
+    // Ensure this runs client-side or has a fallback if inventory might not be ready
+    if (typeof window === 'undefined' && !inventory.length) return undefined; 
     return inventory.find((item) => item.id === itemId);
   };
 

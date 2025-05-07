@@ -1,13 +1,8 @@
-
 import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
-// import { GeistMono } from 'geist/font/mono'; // Removed as it's no longer applied to body globally. Import if used elsewhere.
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-
-// Removed redundant const declarations:
-// const geistSans = GeistSans;
-// const geistMono = GeistMono;
+import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
   title: 'SwiftStock - Sales & Inventory',
@@ -22,10 +17,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body 
-        className={`${GeistSans.className} antialiased`} 
-        suppressHydrationWarning
+        className={`${GeistSans.className} antialiased`} // Use .className for GeistSans
+        suppressHydrationWarning // Add to body as well for extension issues
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Toaster />
       </body>
     </html>
