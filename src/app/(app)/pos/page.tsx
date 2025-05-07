@@ -82,8 +82,14 @@ export default function POSPage() {
   };
 
 
-  const handlePrintReceipt = useReactToPrint({
-    content: () => receiptPrintRef.current,
+  const actualPrintHandler = useReactToPrint({
+    content: () => {
+      if (!receiptPrintRef.current) {
+        toast({ title: "Print Error", description: "Receipt content not found.", variant: "destructive" });
+        return null;
+      }
+      return receiptPrintRef.current;
+    },
     documentTitle: `Receipt-${lastInvoice?.invoiceNumber || 'current-sale'}`,
     onAfterPrint: () => {
       toast({ title: 'Receipt Printed', description: 'The receipt has been sent to the printer.'});
@@ -91,6 +97,12 @@ export default function POSPage() {
     },
     pageStyle: "@page { size: auto;  margin: 0mm; } @media print { body { -webkit-print-color-adjust: exact; } }",
   });
+
+  const handlePrintReceipt = () => {
+    setTimeout(() => {
+      actualPrintHandler?.();
+    }, 0);
+  };
 
   const filteredInventory = useMemo(() => {
     if (!searchTerm) return inventory.filter(item => item.quantity > 0);
