@@ -1,11 +1,12 @@
+
 import type { Metadata } from 'next';
-import { GeistSans } from 'geist/font/sans'; // Updated import
-import { GeistMono } from 'geist/font/mono'; // Updated import
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
-const geistSans = GeistSans; // Direct assignment if variable font is default
-const geistMono = GeistMono; // Direct assignment
+const geistSans = GeistSans;
+const geistMono = GeistMono;
 
 export const metadata: Metadata = {
   title: 'SwiftStock - Sales & Inventory',
@@ -19,11 +20,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning={true}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
         {children}
         <Toaster />
       </body>
     </html>
   );
 }
-
