@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { InventoryItem } from '@/types/inventory';
@@ -7,11 +8,11 @@ import { v4 as uuidv4 } from 'uuid';
 const INVENTORY_STORAGE_KEY = 'swiftstock-inventory';
 
 const initialInventory: InventoryItem[] = [
-  { id: uuidv4(), name: 'Wireless Mouse', sku: 'WM-001', quantity: 50, price: 25.99, imageUrl: 'https://picsum.photos/seed/WM-001/200/150' },
-  { id: uuidv4(), name: 'Mechanical Keyboard', sku: 'MK-002', quantity: 30, price: 79.50, imageUrl: 'https://picsum.photos/seed/MK-002/200/150' },
-  { id: uuidv4(), name: 'USB-C Hub', sku: 'UCH-003', quantity: 75, price: 32.00, imageUrl: 'https://picsum.photos/seed/UCH-003/200/150' },
+  { id: uuidv4(), name: 'Wireless Mouse', sku: 'WM-001', quantity: 50, price: 25.99, imageUrl: 'https://picsum.photos/seed/WM-001/200/150', barcode: '1234567890123' },
+  { id: uuidv4(), name: 'Mechanical Keyboard', sku: 'MK-002', quantity: 30, price: 79.50, imageUrl: 'https://picsum.photos/seed/MK-002/200/150', barcode: '2345678901234' },
+  { id: uuidv4(), name: 'USB-C Hub', sku: 'UCH-003', quantity: 75, price: 32.00, imageUrl: 'https://picsum.photos/seed/UCH-003/200/150', barcode: '3456789012345' },
   { id: uuidv4(), name: '27-inch Monitor', sku: 'MON-004', quantity: 15, price: 299.99, imageUrl: 'https://picsum.photos/seed/MON-004/200/150' },
-  { id: uuidv4(), name: 'Laptop Stand', sku: 'LS-005', quantity: 40, price: 19.99, imageUrl: 'https://picsum.photos/seed/LS-005/200/150' },
+  { id: uuidv4(), name: 'Laptop Stand', sku: 'LS-005', quantity: 40, price: 19.99, imageUrl: 'https://picsum.photos/seed/LS-005/200/150', barcode: '4567890123456' },
   { id: uuidv4(), name: 'Webcam HD 1080p', sku: 'WC-006', quantity: 25, price: 45.00, imageUrl: 'https://picsum.photos/seed/WC-006/200/150' },
   { id: uuidv4(), name: 'Bluetooth Speaker', sku: 'BTS-007', quantity: 60, price: 59.90, imageUrl: 'https://picsum.photos/seed/BTS-007/200/150' },
   { id: uuidv4(), name: 'Gaming Headset', sku: 'GH-008', quantity: 20, price: 89.75, imageUrl: 'https://picsum.photos/seed/GH-008/200/150' },
@@ -57,9 +58,6 @@ export function useInventory() {
         const updatedItem = { ...item, quantity: 0 };
          const newInventory = [...prevInventory];
         newInventory[itemIndex] = updatedItem;
-        // Not throwing error here to allow sale to proceed if it was a deduction
-        // but UI should prevent negative quantities from being *set* directly.
-        // For sale processing, this might mean item is now out of stock.
         return newInventory;
       }
       
@@ -68,8 +66,6 @@ export function useInventory() {
       newInventory[itemIndex] = updatedItem;
       return newInventory;
     });
-    // Note: returning the updated item might be complex here due to async nature of setInventory.
-    // The hook consumer should rely on the updated `inventory` state.
   };
 
   const deleteItem = (itemId: string) => {
@@ -77,9 +73,13 @@ export function useInventory() {
   };
 
   const getItemById = (itemId: string): InventoryItem | undefined => {
-    // Ensure this runs client-side or has a fallback if inventory might not be ready
     if (typeof window === 'undefined' && !inventory.length) return undefined; 
     return inventory.find((item) => item.id === itemId);
+  };
+
+  const getItemByBarcode = (barcode: string): InventoryItem | undefined => {
+    if (typeof window === 'undefined' && !inventory.length) return undefined;
+    return inventory.find((item) => item.barcode === barcode && item.quantity > 0);
   };
 
   return {
@@ -89,5 +89,7 @@ export function useInventory() {
     updateItemQuantity,
     deleteItem,
     getItemById,
+    getItemByBarcode,
   };
 }
+

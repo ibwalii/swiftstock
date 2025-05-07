@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -11,6 +12,7 @@ import {
   ChevronDown,
   LogOut,
   Loader2,
+  User as UserIcon,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -39,22 +41,34 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/app/logo';
 import { Toaster } from '@/components/ui/toaster';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, type User } from '@/hooks/use-auth';
 
-const navItems = [
-  { href: '/pos', icon: ShoppingCart, label: 'Point of Sale', tooltip: 'Point of Sale' },
-  { href: '/inventory', icon: Package, label: 'Inventory', tooltip: 'Inventory Management' },
-  { href: '/invoicing', icon: FileText, label: 'Invoices', tooltip: 'Invoices & Quotations' },
+const baseNavItems = [
+  { href: '/pos', icon: ShoppingCart, label: 'Point of Sale', tooltip: 'Point of Sale', roles: ['admin', 'cashier'] },
+  { href: '/inventory', icon: Package, label: 'Inventory', tooltip: 'Inventory Management', roles: ['admin'] },
+  { href: '/invoicing', icon: FileText, label: 'Invoices', tooltip: 'Invoices & Quotations', roles: ['admin', 'cashier'] },
 ];
+
+function getInitials(email?: string | null) {
+    if (!email) return 'U';
+    const parts = email.split('@')[0].split(/[._-]/);
+    if (parts.length > 1) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return email.substring(0, 2).toUpperCase();
+}
+
 
 function AppSidebar() {
   const pathname = usePathname();
   const { state: sidebarState } = useSidebar();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
   };
+
+  const navItems = baseNavItems.filter(item => user && item.roles.includes(user.role));
 
   return (
     <Sidebar collapsible="icon" variant="sidebar" side="left">
@@ -85,24 +99,26 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-2">
-         {sidebarState === 'expanded' && (
+         {sidebarState === 'expanded' && user && (
            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="w-full justify-start p-2">
                 <Avatar className="mr-2 h-8 w-8">
-                  {/* Use a consistent seed for the avatar image */}
-                  <AvatarImage src="https://picsum.photos/seed/swiftstockuser/40/40" data-ai-hint="user avatar" alt="User Avatar" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarImage src={`https://picsum.photos/seed/${user.email}/40/40`} data-ai-hint="user avatar" alt={`${user.email} Avatar`} />
+                  <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium">John Doe</span>
-                  <span className="text-xs text-muted-foreground">user@example.com</span>
+                  <span className="text-sm font-medium truncate max-w-[120px]" title={user.email}>{user.email}</span>
+                  <span className="text-xs text-muted-foreground capitalize">{user.role}</span>
                 </div>
                 <ChevronDown className="ml-auto h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 mb-2" side="top" align="start">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel className="flex items-center gap-2">
+                <UserIcon className="h-4 w-4 text-muted-foreground" /> 
+                {user.email}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem disabled>
                 <Settings className="mr-2 h-4 w-4" />
@@ -115,18 +131,21 @@ function AppSidebar() {
             </DropdownMenuContent>
           </DropdownMenu>
          )}
-         {sidebarState === 'collapsed' && (
+         {sidebarState === 'collapsed' && user && (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="w-full">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src="https://picsum.photos/seed/swiftstockuser/40/40" data-ai-hint="user avatar" alt="User Avatar" />
-                            <AvatarFallback>JD</AvatarFallback>
+                            <AvatarImage src={`https://picsum.photos/seed/${user.email}/40/40`} data-ai-hint="user avatar" alt={`${user.email} Avatar`} />
+                            <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
                         </Avatar>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 mb-2" side="right" align="start">
-                    <DropdownMenuLabel>John Doe</DropdownMenuLabel>
+                    <DropdownMenuLabel className="flex items-center gap-2">
+                      <UserIcon className="h-4 w-4 text-muted-foreground" /> 
+                      {user.email}
+                      </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem disabled>
                         <Settings className="mr-2 h-4 w-4" />
@@ -145,7 +164,7 @@ function AppSidebar() {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isLoggedIn, isLoadingAuth } = useAuth();
+  const { user, isLoadingAuth } = useAuth(); // Use `user` instead of `isLoggedIn` for more context
   const [clientRendered, setClientRendered] = React.useState(false);
 
   React.useEffect(() => {
@@ -161,12 +180,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // The AuthProvider's effect will handle redirection if not logged in.
-  // This check is mostly to prevent rendering children if, for some edge case,
-  // the component renders before redirection or if auth state is briefly incorrect.
-  if (!isLoggedIn) {
-    // AuthProvider handles redirect, so this state should ideally not be hit for long.
-    // Displaying a loader can prevent content flicker.
+  if (!user) {
     return (
         <div className="flex h-screen items-center justify-center bg-background">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -193,3 +207,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+

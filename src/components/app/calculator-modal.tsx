@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -15,7 +14,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { CalculatorIcon } from 'lucide-react';
+import { Calculator } from 'lucide-react'; // Use Calculator icon from lucide-react
 
 
 const CalculatorModal: React.FC = () => {
@@ -127,7 +126,7 @@ const CalculatorModal: React.FC = () => {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" className="w-full h-9 text-sm">
-            <CalculatorIcon size={16} className="mr-1.5" /> Calculator
+            <Calculator size={16} className="mr-1.5" /> Calculator
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[320px] p-4">
@@ -149,9 +148,10 @@ const CalculatorModal: React.FC = () => {
                 onClick={btn.action}
                 variant={btn.type === 'operator' || btn.type === 'clear' || btn.type === 'modifier' ? 'outline' : (btn.type === 'equals' ? 'default' : 'secondary')}
                 className={cn(
-                  "h-12 text-lg font-medium py-0 px-2", // Adjusted size
+                  "h-12 text-lg font-medium py-0 px-2",
                   btn.className,
-                  (btn.type === 'equals' || btn.type === 'clear' && btn.label === 'C') ? 'text-primary-foreground' : '',
+                  (btn.type === 'equals' || (btn.type === 'clear' && btn.label === 'C')) ? 'text-primary-foreground' : 
+                  (btn.type === 'operator' ? 'text-primary' : ''), // Make operators primary color
                   btn.disabled ? 'opacity-50 cursor-not-allowed' : ''
                 )}
                 data-testid={`calculator-button-${btn.label}`}

@@ -5,4 +5,6 @@ export interface InventoryItem {
   quantity: number;
   price: number;
   imageUrl?: string; // Optional: for product image
+  barcode?: string; // Optional: for barcode scanning
 }
+

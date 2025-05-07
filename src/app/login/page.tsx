@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -18,42 +19,38 @@ import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login, isLoggedIn, isLoadingAuth } = useAuth();
+  const { login, user, isLoadingAuth } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('user@example.com'); // Default for demo
-  const [password, setPassword] = useState('password'); // Default for demo
+  const [email, setEmail] = useState('cashier@example.com'); // Default to cashier for demo
+  const [password, setPassword] = useState('password'); 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clientSideReady, setClientSideReady] = useState(false);
 
   useEffect(() => {
-    // Ensures this runs only on client after hydration
     setClientSideReady(true);
   }, []);
 
   useEffect(() => {
-    if (clientSideReady && !isLoadingAuth && isLoggedIn) {
+    if (clientSideReady && !isLoadingAuth && user) {
       router.replace('/pos');
     }
-  }, [isLoggedIn, isLoadingAuth, router, clientSideReady]);
+  }, [user, isLoadingAuth, router, clientSideReady]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
 
-    // Mock login validation
-    if (email === 'user@example.com' && password === 'password') {
-      await login(); // login already handles redirection
-    } else {
+    const success = await login({ email, pass: password });
+    if (!success) {
       setError('Invalid email or password.');
     }
+    // Login function handles redirection on success
     setIsSubmitting(false);
   };
 
-  if (!clientSideReady || isLoadingAuth || (clientSideReady && !isLoadingAuth && isLoggedIn && typeof window !== 'undefined' && window.location.pathname !== '/login')) {
-    // Show loader if not client-side ready, or auth is loading,
-    // or if logged in and not already on /login (to prevent flicker during redirect)
+  if (!clientSideReady || isLoadingAuth || (clientSideReady && !isLoadingAuth && user && typeof window !== 'undefined' && window.location.pathname !== '/login')) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -103,9 +100,10 @@ export default function LoginPage() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col items-center justify-center text-xs text-muted-foreground pb-8 pt-4">
-          <p>For demo purposes:</p>
-          <p>Email: user@example.com / Password: password</p>
+        <CardFooter className="flex flex-col items-center justify-center text-xs text-muted-foreground pb-8 pt-4 space-y-1">
+          <p className='font-medium'>Demo Credentials:</p>
+          <p>Admin: admin@example.com / Password: password</p>
+          <p>Cashier: cashier@example.com / Password: password</p>
         </CardFooter>
       </Card>
        <p className="mt-8 text-xs text-muted-foreground">
@@ -114,3 +112,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

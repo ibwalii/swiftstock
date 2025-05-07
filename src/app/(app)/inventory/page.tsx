@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -34,6 +35,7 @@ const initialFormState: Omit<InventoryItem, 'id'> = {
   quantity: 0,
   price: 0,
   imageUrl: '',
+  barcode: '',
 };
 
 export default function InventoryPage() {
@@ -77,7 +79,7 @@ export default function InventoryPage() {
 
   const openEditDialog = (item: InventoryItem) => {
     setEditingItem(item);
-    setFormData({ name: item.name, sku: item.sku, quantity: item.quantity, price: item.price, imageUrl: item.imageUrl || '' });
+    setFormData({ name: item.name, sku: item.sku, quantity: item.quantity, price: item.price, imageUrl: item.imageUrl || '', barcode: item.barcode || '' });
     setIsFormDialogOpen(true);
   };
 
@@ -115,6 +117,7 @@ export default function InventoryPage() {
                 <TableHead className="w-[80px]">Image</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>SKU</TableHead>
+                <TableHead>Barcode</TableHead>
                 <TableHead className="text-right">Quantity</TableHead>
                 <TableHead className="text-right">Price</TableHead>
                 <TableHead className="text-center w-[130px]">Actions</TableHead>
@@ -135,6 +138,7 @@ export default function InventoryPage() {
                   </TableCell>
                   <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell>{item.sku}</TableCell>
+                  <TableCell>{item.barcode || '-'}</TableCell>
                   <TableCell className="text-right">{item.quantity}</TableCell>
                   <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
                   <TableCell className="text-center">
@@ -189,6 +193,10 @@ export default function InventoryPage() {
               <Input id="sku" name="sku" value={formData.sku} onChange={handleInputChange} className="col-span-3" required />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="barcode" className="text-right">Barcode</Label>
+              <Input id="barcode" name="barcode" value={formData.barcode || ''} onChange={handleInputChange} className="col-span-3" placeholder="e.g. 1234567890123"/>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="quantity" className="text-right">Quantity</Label>
               <Input id="quantity" name="quantity" type="number" value={formData.quantity} onChange={handleInputChange} className="col-span-3" required min="0" />
             </div>
@@ -210,3 +218,4 @@ export default function InventoryPage() {
     </div>
   );
 }
+
