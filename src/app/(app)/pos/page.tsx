@@ -55,7 +55,7 @@ export default function POSPage() {
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false); // State for new checkout modal
 
-  const [isCustomerDisplayOpen, setIsCustomerDisplayOpen] = useState(false);
+  const [isCustomerDisplayModalOpen, setIsCustomerDisplayModalOpen] = useState(false); // Renamed for clarity
   const [customerDisplayWindow, setCustomerDisplayWindow] = useState<Window | null>(null);
   const [lastInvoice, setLastInvoice] = useState<Invoice | null>(null);
 
@@ -178,7 +178,7 @@ export default function POSPage() {
       toast({
         title: "Item Added",
         description: `${item.name} added to cart via barcode.`,
-        icon: <CheckCircle className="h-5 w-5 text-green-500" /> // Using text color for icon
+        icon: <CheckCircle className="h-5 w-5 text-green-500" /> 
       });
       playSound('success');
       setBarcodeInput(''); 
@@ -213,7 +213,6 @@ export default function POSPage() {
   };
 
   const handleConfirmSale = (paymentMethod: string) => {
-    // This function is called from CheckoutModal
     const invoiceItems: InvoiceItem[] = cart.map((item) => ({
       productId: item.id,
       name: item.name,
@@ -232,17 +231,17 @@ export default function POSPage() {
         customerName,
         items: invoiceItems,
         totalAmount: cartTotal,
-        // paymentMethod: paymentMethod, // Store payment method if your Invoice type supports it
+        paymentMethod: paymentMethod,
       });
       
       setLastInvoice(newInvoice);
-      setIsCheckoutModalOpen(false); // Close checkout modal
-      setIsReceiptDialogOpen(true); // Open final receipt dialog for printing
+      setIsCheckoutModalOpen(false); 
+      setIsReceiptDialogOpen(true); 
       
       if (customerDisplayWindow && !customerDisplayWindow.closed) {
         customerDisplayWindow.postMessage({ type: 'SALE_COMPLETE', invoice: newInvoice }, '*');
       } else {
-        setIsCustomerDisplayOpen(false);
+        setCustomerDisplayWindow(null); // Ensure reference is cleared if window was closed
       }
 
       toast({ title: 'Sale Processed!', description: `Invoice ${newInvoice.invoiceNumber} created for ${customerName} via ${paymentMethod}.` });
@@ -257,14 +256,33 @@ export default function POSPage() {
 
   const openCustomerDisplayWindow = () => {
     const features = 'width=800,height=600,resizable,scrollbars=yes,status=yes';
-    const newWindow = window.open('/customer-display', '_blank', features);
-    setCustomerDisplayWindow(newWindow);
-    setIsCustomerDisplayOpen(false); 
+    
+    if (customerDisplayWindow && !customerDisplayWindow.closed) {
+      customerDisplayWindow.focus();
+      // Resend current cart state as it might have changed since window was opened
+      customerDisplayWindow.postMessage({ type: 'UPDATE_CART', cartItems: cart, totalAmount: cartTotal }, '*');
+      return;
+    }
 
+    const newWindow = window.open('/customer-display', '_blank', features);
+    
     if (newWindow) {
-        newWindow.onload = () => {
-            newWindow.postMessage({ type: 'UPDATE_CART', cartItems: cart, totalAmount: cartTotal }, '*');
-        };
+      setCustomerDisplayWindow(newWindow);
+      newWindow.onload = () => {
+          newWindow.postMessage({ type: 'UPDATE_CART', cartItems: cart, totalAmount: cartTotal }, '*');
+      };
+      newWindow.onunload = () => {
+          // Clear the reference when the user closes the window
+          setCustomerDisplayWindow(null);
+      };
+    } else {
+      // Handle popup blocker
+      toast({
+          title: "Popup Blocked",
+          description: "Please allow popups for this site to use the customer display window.",
+          variant: "destructive"
+      });
+      setCustomerDisplayWindow(null); // Ensure it's null if window failed to open
     }
   };
 
@@ -276,11 +294,9 @@ export default function POSPage() {
 
 
   return (
-    // Removed fixed height and overflow-hidden from this main div
-    // The AppLayout's main container will handle overall page scrolling if needed
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <div className="lg:col-span-4 flex flex-col space-y-3 max-h-full"> {/* max-h-full allows it to take height from parent */}
-        <Card className="flex-grow flex flex-col overflow-hidden"> {/* This card will manage its internal overflow */}
+      <div className="lg:col-span-4 flex flex-col space-y-3 max-h-full"> 
+        <Card className="flex-grow flex flex-col overflow-hidden"> 
           <CardHeader className="p-3 border-b">
             <CardTitle className="text-lg">Current Sale</CardTitle>
             <div className="mt-1.5">
@@ -296,7 +312,7 @@ export default function POSPage() {
               />
             </div>
           </CardHeader>
-          <CardContent className="flex-grow overflow-hidden p-0"> {/* flex-grow allows ScrollArea to expand */}
+          <CardContent className="flex-grow overflow-hidden p-0"> 
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
                 <ShoppingCart size={36} className="mb-2" />
@@ -304,7 +320,7 @@ export default function POSPage() {
                 <p className="text-xs">Scan a barcode or add products from the right.</p>
               </div>
             ) : (
-              <ScrollArea className="h-full"> {/* h-full makes ScrollArea take available space in CardContent */}
+              <ScrollArea className="h-full"> 
                 <Table className="text-xs">
                   <TableHeader>
                     <TableRow>
@@ -358,10 +374,10 @@ export default function POSPage() {
               <CreditCard size={16} className="mr-1.5" /> Checkout 
             </Button>
             <div className="grid grid-cols-2 gap-1.5">
-                <Button size="default" variant="outline" className="w-full h-9 text-sm" onClick={() => setIsCustomerDisplayOpen(true)} disabled={cart.length === 0}>
+                <Button size="default" variant="outline" className="w-full h-9 text-sm" onClick={() => setIsCustomerDisplayModalOpen(true)}>
                     <MonitorPlay size={16} className="mr-1.5" /> Modal Display
                 </Button>
-                 <Button size="default" variant="outline" className="w-full h-9 text-sm" onClick={openCustomerDisplayWindow} disabled={cart.length === 0}>
+                 <Button size="default" variant="outline" className="w-full h-9 text-sm" onClick={openCustomerDisplayWindow}>
                     <MonitorPlay size={16} className="mr-1.5" /> Window Display
                 </Button>
             </div>
@@ -370,8 +386,8 @@ export default function POSPage() {
         </Card>
       </div>
 
-      <div className="lg:col-span-8 flex flex-col max-h-full"> {/* max-h-full for this column too */}
-        <Card className="flex-grow flex flex-col overflow-hidden"> {/* Card manages its internal overflow */}
+      <div className="lg:col-span-8 flex flex-col max-h-full"> 
+        <Card className="flex-grow flex flex-col overflow-hidden"> 
           <CardHeader className="p-3 border-b space-y-2">
             <CardTitle className="text-lg">Available Products</CardTitle>
              <div className="flex gap-2">
@@ -400,7 +416,7 @@ export default function POSPage() {
               />
             </div>
           </CardHeader>
-          <CardContent className="flex-grow overflow-hidden p-2"> {/* flex-grow for ScrollArea */}
+          <CardContent className="flex-grow overflow-hidden p-2"> 
             {filteredInventory.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
                 <ShoppingCart size={40} className="mb-3" />
@@ -408,7 +424,7 @@ export default function POSPage() {
                 <p className="text-xs">Adjust search or check inventory.</p>
               </div>
             ) : (
-              <ScrollArea className="h-full"> {/* h-full for ScrollArea */}
+              <ScrollArea className="h-full"> 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                   {filteredInventory.map((item) => (
                     <Card key={item.id} className="flex flex-col overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-150 cursor-pointer group" onClick={() => addToCart(item)}>
@@ -450,7 +466,6 @@ export default function POSPage() {
         </Card>
       </div>
 
-      {/* Dialog for Printing Receipt AFTER sale is confirmed */}
       {lastInvoice && (
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
         <DialogContent className="sm:max-w-xs">
@@ -461,12 +476,10 @@ export default function POSPage() {
             </DialogDescription>
           </DialogHeader>
           
-          {/* This div will be hidden but used by react-to-print */}
           <div className="hidden"> 
             <ReceiptPreview ref={receiptPrintRef} invoice={lastInvoice} />
           </div>
 
-           {/* Visible preview in the dialog */}
           <div className="p-4 border-y max-h-[50vh] overflow-y-auto text-xs">
               <ReceiptPreview invoice={lastInvoice} />
           </div>
@@ -484,8 +497,8 @@ export default function POSPage() {
       )}
 
       <CustomerDisplayModal 
-        isOpen={isCustomerDisplayOpen}
-        onClose={() => setIsCustomerDisplayOpen(false)}
+        isOpen={isCustomerDisplayModalOpen}
+        onClose={() => setIsCustomerDisplayModalOpen(false)}
         cartItems={cart}
         totalAmount={cartTotal}
       />

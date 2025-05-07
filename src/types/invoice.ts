@@ -15,8 +15,7 @@ export interface Invoice {
   customerName: string; // Simplified for now, could be an object or ID
   items: InvoiceItem[];
   totalAmount: number;
-  // Optional fields
-  paymentMethod?: string; // Added optional paymentMethod
+  paymentMethod?: string; 
   // notes?: string;
 }
 
