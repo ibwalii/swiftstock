@@ -242,7 +242,7 @@ export default function POSPage() {
               />
             </div>
           </CardHeader>
-          <CardContent className="flex-grow overflow-y-auto p-0"> {/* Changed to overflow-y-auto and p-0 */}
+          <CardContent className="flex-grow overflow-hidden p-0"> {/* Changed overflow-y-auto to overflow-hidden */}
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
                 <ShoppingCart size={36} className="mb-2" />
@@ -327,7 +327,7 @@ export default function POSPage() {
               />
             </div>
           </CardHeader>
-          <CardContent className="flex-grow overflow-y-auto p-2"> {/* Changed to overflow-y-auto and p-2 */}
+          <CardContent className="flex-grow overflow-hidden p-2"> {/* Changed overflow-y-auto to overflow-hidden */}
             {filteredInventory.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
                 <ShoppingCart size={40} className="mb-3" />
@@ -432,3 +432,4 @@ export default function POSPage() {
     </div>
   );
 }
+
