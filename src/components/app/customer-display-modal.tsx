@@ -15,6 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { InventoryItem } from '@/types/inventory';
 import { Logo } from './logo';
+import { ShoppingCart } from 'lucide-react'; // Import ShoppingCart icon
 
 interface CartItem extends InventoryItem {
   cartQuantity: number;
@@ -95,5 +96,3 @@ const CustomerDisplayModal: React.FC<CustomerDisplayModalProps> = ({
 };
 
 export { CustomerDisplayModal };
-
-interface ShoppingCart extends React.SVGProps<SVGSVGElement> {}
