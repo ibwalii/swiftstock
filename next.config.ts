@@ -16,6 +16,14 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      // Add other image hostnames if needed in the future
+      // e.g. for product images from a specific CDN
+      // {
+      //   protocol: 'https',
+      //   hostname: 'cdn.example.com',
+      //   port: '',
+      //   pathname: '/images/**',
+      // },
     ],
   },
 };
