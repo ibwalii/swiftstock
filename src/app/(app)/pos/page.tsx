@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -55,11 +54,11 @@ export default function POSPage() {
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false); // State for new checkout modal
 
-  const [isCustomerDisplayModalOpen, setIsCustomerDisplayModalOpen] = useState(false); // Renamed for clarity
+  const [isCustomerDisplayModalOpen, setIsCustomerDisplayModalOpen] = useState(false); 
   const [customerDisplayWindow, setCustomerDisplayWindow] = useState<Window | null>(null);
   const [lastInvoice, setLastInvoice] = useState<Invoice | null>(null);
 
-  const receiptPrintRef = useRef<HTMLDivElement>(null); // Ref for the actual printable receipt content
+  const receiptPrintRef = useRef<HTMLDivElement>(null); 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const successAudioRef = useRef<HTMLAudioElement | null>(null);
   const errorAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -86,7 +85,8 @@ export default function POSPage() {
   const actualPrintHandler = useReactToPrint({
     content: () => {
       if (!receiptPrintRef.current) {
-        toast({ title: "Print Error", description: "Receipt content not found.", variant: "destructive" });
+        toast({ title: "Print Error", description: "Receipt content (ref) not found.", variant: "destructive" });
+        console.error("ReceiptPrintRef is null or undefined when trying to print via actualPrintHandler.");
         return null;
       }
       return receiptPrintRef.current;
@@ -100,7 +100,20 @@ export default function POSPage() {
   });
 
   const handlePrintReceipt = () => {
-    actualPrintHandler?.();
+    // Ensure the dialog is open and content is rendered
+    if (!isReceiptDialogOpen || !lastInvoice) {
+        toast({ title: "Print Error", description: "Receipt data not ready or dialog not open.", variant: "destructive"});
+        return;
+    }
+     // Add a small delay to ensure the ref is populated and DOM is ready
+    setTimeout(() => {
+      if (!receiptPrintRef.current) {
+          toast({ title: "Print Error", description: "Receipt content (ref) not available even after delay.", variant: "destructive" });
+          console.error("ReceiptPrintRef is null or undefined when trying to print via handlePrintReceipt (setTimeout).");
+          return;
+      }
+      actualPrintHandler?.();
+    }, 0); // Pushing to next tick
   };
 
   const filteredInventory = useMemo(() => {
@@ -241,7 +254,7 @@ export default function POSPage() {
       if (customerDisplayWindow && !customerDisplayWindow.closed) {
         customerDisplayWindow.postMessage({ type: 'SALE_COMPLETE', invoice: newInvoice }, '*');
       } else {
-        setCustomerDisplayWindow(null); // Ensure reference is cleared if window was closed
+        setCustomerDisplayWindow(null); 
       }
 
       toast({ title: 'Sale Processed!', description: `Invoice ${newInvoice.invoiceNumber} created for ${customerName} via ${paymentMethod}.` });
@@ -259,7 +272,6 @@ export default function POSPage() {
     
     if (customerDisplayWindow && !customerDisplayWindow.closed) {
       customerDisplayWindow.focus();
-      // Resend current cart state as it might have changed since window was opened
       customerDisplayWindow.postMessage({ type: 'UPDATE_CART', cartItems: cart, totalAmount: cartTotal }, '*');
       return;
     }
@@ -268,26 +280,28 @@ export default function POSPage() {
     
     if (newWindow) {
       setCustomerDisplayWindow(newWindow);
-      newWindow.onload = () => {
-          newWindow.postMessage({ type: 'UPDATE_CART', cartItems: cart, totalAmount: cartTotal }, '*');
-      };
+      // Add a slight delay before posting the message to give the new window time to load its event listeners
+      setTimeout(() => {
+        newWindow.postMessage({ type: 'UPDATE_CART', cartItems: cart, totalAmount: cartTotal }, '*');
+      }, 500); // 500ms delay, adjust if needed
+
       newWindow.onunload = () => {
-          // Clear the reference when the user closes the window
           setCustomerDisplayWindow(null);
       };
     } else {
-      // Handle popup blocker
       toast({
           title: "Popup Blocked",
           description: "Please allow popups for this site to use the customer display window.",
           variant: "destructive"
       });
-      setCustomerDisplayWindow(null); // Ensure it's null if window failed to open
+      setCustomerDisplayWindow(null); 
     }
   };
 
   useEffect(() => {
     if (customerDisplayWindow && !customerDisplayWindow.closed) {
+        // Check if window is ready before posting. If not, CustomerDisplayPage will request it.
+        // However, for subsequent updates, we can post directly.
         customerDisplayWindow.postMessage({ type: 'UPDATE_CART', cartItems: cart, totalAmount: cartTotal }, '*');
     }
   }, [cart, cartTotal, customerDisplayWindow]);
@@ -374,10 +388,10 @@ export default function POSPage() {
               <CreditCard size={16} className="mr-1.5" /> Checkout 
             </Button>
             <div className="grid grid-cols-2 gap-1.5">
-                <Button size="default" variant="outline" className="w-full h-9 text-sm" onClick={() => setIsCustomerDisplayModalOpen(true)}>
+                <Button size="default" variant="outline" className="w-full h-9 text-sm" onClick={() => setIsCustomerDisplayModalOpen(true)} disabled={false}>
                     <MonitorPlay size={16} className="mr-1.5" /> Modal Display
                 </Button>
-                 <Button size="default" variant="outline" className="w-full h-9 text-sm" onClick={openCustomerDisplayWindow}>
+                 <Button size="default" variant="outline" className="w-full h-9 text-sm" onClick={openCustomerDisplayWindow} disabled={false}>
                     <MonitorPlay size={16} className="mr-1.5" /> Window Display
                 </Button>
             </div>
@@ -476,12 +490,8 @@ export default function POSPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="hidden"> 
-            <ReceiptPreview ref={receiptPrintRef} invoice={lastInvoice} />
-          </div>
-
           <div className="p-4 border-y max-h-[50vh] overflow-y-auto text-xs">
-              <ReceiptPreview invoice={lastInvoice} />
+              <ReceiptPreview ref={receiptPrintRef} invoice={lastInvoice} />
           </div>
           
           <DialogFooter className="p-4 flex-col sm:flex-col sm:space-x-0 gap-2">
@@ -514,4 +524,3 @@ export default function POSPage() {
     </div>
   );
 }
-
