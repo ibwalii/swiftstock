@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -17,7 +18,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import type { CartItem } from '@/app/(app)/pos/page'; // Import CartItem from POS page
 import { ReceiptPreview } from './receipt-preview'; // Import ReceiptPreview
-import { CreditCard, Smartphone, DollarSign, Send } from 'lucide-react';
+import { CreditCard, Smartphone, Send } from 'lucide-react';
+
+// Using inline SVG for Naira sign as lucide-react might not have it directly
+const NairaSign = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5L17.25 7.5M6.75 16.5L17.25 16.5M12 3.75L12 20.25M8.25 12L15.75 12M6 7.5L6 5.25C6 4.42157 6.67157 3.75 7.5 3.75H16.5C17.3284 3.75 18 4.42157 18 5.25V7.5M6 16.5V18.75C6 19.5784 6.67157 20.25 7.5 20.25H16.5C17.3284 20.25 18 19.5784 18 18.75V16.5" />
+  </svg>
+);
+
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -78,7 +87,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <RadioGroup value={paymentMethod} onValueChange={(value: PaymentMethod) => setPaymentMethod(value)} className="space-y-3">
                 <Label htmlFor="cash" className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
                   <RadioGroupItem value="Cash" id="cash" />
-                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <NairaSign className="h-5 w-5 text-green-600" />
                   <span>Cash</span>
                 </Label>
                 <Label htmlFor="card" className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
@@ -101,16 +110,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>${totalAmount.toFixed(2)}</span>
+                  <span>₦{totalAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax (0%):</span> 
-                  <span>$0.00</span>
+                  <span>₦0.00</span>
                 </div>
                 <Separator className="my-1" />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total Due:</span>
-                  <span className="text-primary">${totalAmount.toFixed(2)}</span>
+                  <span className="text-primary">₦{totalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -151,3 +160,4 @@ const CheckCircle = (props: React.SVGProps<SVGSVGElement>) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
+

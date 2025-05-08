@@ -41,8 +41,8 @@ export default function CustomerDisplayPage() {
 
     window.addEventListener('message', handleMessage);
     // Notify opener that the window is ready
-    if (window.opener) {
-        window.opener.postMessage({ type: 'CUSTOMER_DISPLAY_READY' }, '*');
+    if (window.opener && typeof window.opener.postMessage === 'function') {
+      window.opener.postMessage({ type: 'CUSTOMER_DISPLAY_READY' }, window.location.origin); // Specify targetOrigin
     }
 
 
@@ -61,7 +61,7 @@ export default function CustomerDisplayPage() {
             <p className="text-2xl text-muted-foreground mb-2">Your order is complete.</p>
             <p className="text-xl text-muted-foreground mb-6">Invoice Number: {invoice.invoiceNumber}</p>
             <div className="text-3xl font-bold text-foreground">
-                Total: ${invoice.totalAmount.toFixed(2)}
+                Total: ₦{invoice.totalAmount.toFixed(2)}
             </div>
             <p className="mt-12 text-sm text-muted-foreground">Please wait for your receipt.</p>
         </div>
@@ -101,8 +101,8 @@ export default function CustomerDisplayPage() {
                 <TableRow key={item.id} className="border-b hover:bg-muted/50">
                   <TableCell className="font-medium py-5">{item.name}</TableCell> {/* Increased padding */}
                   <TableCell className="text-center py-5">{item.cartQuantity}</TableCell>
-                  <TableCell className="text-right py-5">${item.price.toFixed(2)}</TableCell>
-                  <TableCell className="text-right py-5 font-semibold">${(item.price * item.cartQuantity).toFixed(2)}</TableCell>
+                  <TableCell className="text-right py-5">₦{item.price.toFixed(2)}</TableCell>
+                  <TableCell className="text-right py-5 font-semibold">₦{(item.price * item.cartQuantity).toFixed(2)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -114,10 +114,11 @@ export default function CustomerDisplayPage() {
         <div className="w-full flex justify-end items-center">
            <div className="text-right">
               <p className="text-xl text-muted-foreground">Total Amount Due</p> {/* Increased text size */}
-              <p className="text-6xl font-extrabold text-primary">${totalAmount.toFixed(2)}</p> {/* Increased total size */}
+              <p className="text-6xl font-extrabold text-primary">₦{totalAmount.toFixed(2)}</p> {/* Increased total size */}
           </div>
         </div>
       </footer>
     </div>
   );
 }
+

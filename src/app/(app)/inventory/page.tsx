@@ -140,7 +140,7 @@ export default function InventoryPage() {
                   <TableCell>{item.sku}</TableCell>
                   <TableCell>{item.barcode || '-'}</TableCell>
                   <TableCell className="text-right">{item.quantity}</TableCell>
-                  <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₦{item.price.toFixed(2)}</TableCell>
                   <TableCell className="text-center">
                     <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)} className="mr-1 hover:text-primary">
                       <Edit2 size={16} />

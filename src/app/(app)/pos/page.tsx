@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -362,7 +363,7 @@ export default function POSPage() {
                             <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => incrementCartItem(item.id)}><PlusCircle size={12}/></Button>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right p-1.5">${(item.price * item.cartQuantity).toFixed(2)}</TableCell>
+                        <TableCell className="text-right p-1.5">₦{(item.price * item.cartQuantity).toFixed(2)}</TableCell>
                         <TableCell className="text-right p-1">
                           <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.id)} className="text-destructive hover:text-destructive h-6 w-6">
                             <Trash2 size={12} />
@@ -379,7 +380,7 @@ export default function POSPage() {
             <div className="p-3 border-t">
                 <div className="flex justify-between items-center">
                     <span className="text-md font-semibold">Total:</span>
-                    <span className="text-xl font-bold text-primary">${cartTotal.toFixed(2)}</span>
+                    <span className="text-xl font-bold text-primary">₦{cartTotal.toFixed(2)}</span>
                 </div>
             </div>
            )}
@@ -459,7 +460,7 @@ export default function POSPage() {
                           {item.barcode && <p className="text-muted-foreground text-xs">BC: {item.barcode}</p>}
                         </div>
                         <div className="mt-0.5">
-                          <p className="font-bold text-primary text-sm">${item.price.toFixed(2)}</p>
+                          <p className="font-bold text-primary text-sm">₦{item.price.toFixed(2)}</p>
                           <p className="text-muted-foreground">Stock: {item.quantity}</p>
                         </div>
                       </div>
@@ -491,7 +492,10 @@ export default function POSPage() {
           </DialogHeader>
           
           <div className="p-4 border-y max-h-[50vh] overflow-y-auto text-xs">
-              <ReceiptPreview ref={receiptPrintRef} invoice={lastInvoice} />
+             {/* The ref should ideally be on the direct child that you want to print */}
+            <div ref={receiptPrintRef}>
+              <ReceiptPreview invoice={lastInvoice} />
+            </div>
           </div>
           
           <DialogFooter className="p-4 flex-col sm:flex-col sm:space-x-0 gap-2">
@@ -524,3 +528,4 @@ export default function POSPage() {
     </div>
   );
 }
+

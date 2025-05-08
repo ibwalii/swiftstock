@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -96,7 +97,7 @@ export default function InvoicingPage() {
                     <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                     <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
                     <TableCell>{invoice.customerName}</TableCell>
-                    <TableCell className="text-right">${invoice.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">₦{invoice.totalAmount.toFixed(2)}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" onClick={() => handleViewInvoice(invoice)}>
                         <Eye size={16} />
@@ -108,7 +109,7 @@ export default function InvoicingPage() {
               <TableFooter>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
                   <TableCell colSpan={3} className="font-semibold text-lg">Total Revenue</TableCell>
-                  <TableCell className="text-right font-semibold text-lg">${totalRevenue.toFixed(2)}</TableCell>
+                  <TableCell className="text-right font-semibold text-lg">₦{totalRevenue.toFixed(2)}</TableCell>
                   <TableCell />
                 </TableRow>
               </TableFooter>
@@ -145,15 +146,15 @@ export default function InvoicingPage() {
                       <TableCell>{item.name}</TableCell>
                       <TableCell>{item.sku}</TableCell>
                       <TableCell className="text-center">{item.quantity}</TableCell>
-                      <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">${item.subtotal.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">₦{item.price.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">₦{item.subtotal.toFixed(2)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
                 <TableFooter>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableCell colSpan={4} className="font-semibold text-lg">Total Amount</TableCell>
-                    <TableCell className="text-right font-semibold text-lg">${selectedInvoice.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-semibold text-lg">₦{selectedInvoice.totalAmount.toFixed(2)}</TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>
@@ -170,3 +171,4 @@ export default function InvoicingPage() {
     </div>
   );
 }
+

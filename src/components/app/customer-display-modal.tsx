@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -68,8 +69,8 @@ const CustomerDisplayModal: React.FC<CustomerDisplayModalProps> = ({
                   <TableRow key={item.id} className="border-b hover:bg-muted/50">
                     <TableCell className="font-medium py-4 text-foreground">{item.name}</TableCell>
                     <TableCell className="text-center py-4 text-foreground">{item.cartQuantity}</TableCell>
-                    <TableCell className="text-right py-4 text-foreground">${item.price.toFixed(2)}</TableCell>
-                    <TableCell className="text-right py-4 font-semibold text-foreground">${(item.price * item.cartQuantity).toFixed(2)}</TableCell>
+                    <TableCell className="text-right py-4 text-foreground">₦{item.price.toFixed(2)}</TableCell>
+                    <TableCell className="text-right py-4 font-semibold text-foreground">₦{(item.price * item.cartQuantity).toFixed(2)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -86,7 +87,7 @@ const CustomerDisplayModal: React.FC<CustomerDisplayModalProps> = ({
                 </DialogClose>
                  <div className="text-right">
                     <p className="text-md text-muted-foreground">Total Amount Due</p>
-                    <p className="text-5xl font-extrabold text-primary">${totalAmount.toFixed(2)}</p>
+                    <p className="text-5xl font-extrabold text-primary">₦{totalAmount.toFixed(2)}</p>
                 </div>
             </div>
         </DialogFooter>
@@ -96,3 +97,4 @@ const CustomerDisplayModal: React.FC<CustomerDisplayModalProps> = ({
 };
 
 export { CustomerDisplayModal };
+

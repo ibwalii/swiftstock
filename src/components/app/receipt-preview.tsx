@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -44,15 +45,15 @@ const ReceiptPreview = React.forwardRef<HTMLDivElement, ReceiptPreviewProps>(({ 
             <tr key={item.productId} className="border-b border-dotted border-gray-300 last:border-b-0">
               <td className="py-0.5 pr-0.5 truncate max-w-[100px]">{item.name}</td>
               <td className="text-center py-0.5 px-0.5">{item.quantity}</td>
-              <td className="text-right py-0.5 px-0.5">${item.price.toFixed(2)}</td>
-              <td className="text-right py-0.5 pl-0.5">${item.subtotal.toFixed(2)}</td>
+              <td className="text-right py-0.5 px-0.5">₦{item.price.toFixed(2)}</td>
+              <td className="text-right py-0.5 pl-0.5">₦{item.subtotal.toFixed(2)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       <div className="mt-2 pt-1 border-t-2 border-dashed border-black text-right">
-        <p className="text-sm font-bold">TOTAL: ${invoice.totalAmount.toFixed(2)}</p>
+        <p className="text-sm font-bold">TOTAL: ₦{invoice.totalAmount.toFixed(2)}</p>
       </div>
 
       <div className="text-center mt-3 text-[10px]"> {/* Even smaller text for footer */}
