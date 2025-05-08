@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { Invoice } from '@/types/invoice';
-import { Logo } from '@/components/app/logo';
+// import { Logo } from '@/components/app/logo'; // Temporarily remove direct Logo component usage
 
 interface ReceiptPreviewProps {
   invoice: Invoice | null;
@@ -14,7 +14,13 @@ const ReceiptPreview = React.forwardRef<HTMLDivElement, ReceiptPreviewProps>(({ 
   return (
     <div ref={ref} className="p-4 bg-white text-black font-sans text-xs w-[288px] mx-auto my-2 shadow-md"> {/* Approx 3-inch receipt width */}
       <div className="text-center mb-3">
-        <div className="flex justify-center my-1"><Logo /></div>
+        {/* Placeholder for Logo to avoid potential issues with react-to-print and nested components/SVGs */}
+        <div className="flex items-center justify-center gap-2 my-1" aria-label="SwiftStock Logo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+          <span className="text-xl font-semibold text-primary">SwiftStock</span>
+        </div>
         <h2 className="text-md font-bold">Sale Receipt</h2>
         <p>Date: {new Date(invoice.date).toLocaleDateString()} {new Date(invoice.date).toLocaleTimeString()}</p>
         <p>Invoice #: {invoice.invoiceNumber}</p>
@@ -60,3 +66,4 @@ const ReceiptPreview = React.forwardRef<HTMLDivElement, ReceiptPreviewProps>(({ 
 ReceiptPreview.displayName = 'ReceiptPreview';
 
 export { ReceiptPreview };
+
