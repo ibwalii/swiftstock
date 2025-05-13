@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useInventory } from '@/hooks/use-inventory';
 import type { InventoryItem } from '@/types/inventory';
@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Edit2, Trash2, PackageSearch } from 'lucide-react';
+import { PlusCircle, Edit2, Trash2, PackageSearch, UploadCloud, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -34,7 +34,7 @@ const initialFormState: Omit<InventoryItem, 'id'> = {
   sku: '',
   quantity: 0,
   price: 0,
-  imageUrl: '',
+  imageUrl: '', // This will store the data URI
   barcode: '',
 };
 
@@ -43,6 +43,8 @@ export default function InventoryPage() {
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [formData, setFormData] = useState<Omit<InventoryItem, 'id'>>(initialFormState);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,33 +55,97 @@ export default function InventoryPage() {
     }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({
+          title: 'Image Too Large',
+          description: 'Please select an image smaller than 2MB.',
+          variant: 'destructive',
+        });
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''; // Reset file input
+        }
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUri = reader.result as string;
+        setFormData((prev) => ({ ...prev, imageUrl: dataUri }));
+        setImagePreview(dataUri);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // If no file is selected (e.g., user clears selection), clear the preview and data URI
+      // For edit mode, if user clears, we might want to revert to original image or allow clearing
+      if (!editingItem?.imageUrl) {
+        setFormData((prev) => ({ ...prev, imageUrl: '' }));
+        setImagePreview(null);
+      }
+    }
+  };
+  
+  const removeImage = () => {
+    setFormData((prev) => ({ ...prev, imageUrl: ''}));
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''; // Reset file input
+    }
+  };
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.sku) {
       toast({ title: "Validation Error", description: "Name and SKU are required.", variant: "destructive"});
       return;
     }
+    
+    const itemDataToSave: Omit<InventoryItem, 'id'> = {
+      ...formData,
+      imageUrl: imagePreview || formData.imageUrl || '', // Prioritize new preview, then existing form data
+    };
+
+
     if (editingItem) {
-      updateItem({ ...editingItem, ...formData });
+      updateItem({ ...editingItem, ...itemDataToSave });
       toast({ title: 'Item Updated', description: `${formData.name} has been updated successfully.` });
     } else {
-      addItem(formData);
+      addItem(itemDataToSave);
       toast({ title: 'Item Added', description: `${formData.name} has been added successfully.` });
     }
+    closeFormDialog();
+  };
+
+  const closeFormDialog = () => {
     setIsFormDialogOpen(false);
     setEditingItem(null);
     setFormData(initialFormState);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+    }
   };
 
   const openAddDialog = () => {
     setEditingItem(null);
     setFormData(initialFormState);
+    setImagePreview(null);
     setIsFormDialogOpen(true);
   };
 
   const openEditDialog = (item: InventoryItem) => {
     setEditingItem(item);
-    setFormData({ name: item.name, sku: item.sku, quantity: item.quantity, price: item.price, imageUrl: item.imageUrl || '', barcode: item.barcode || '' });
+    setFormData({ 
+        name: item.name, 
+        sku: item.sku, 
+        quantity: item.quantity, 
+        price: item.price, 
+        imageUrl: item.imageUrl || '', 
+        barcode: item.barcode || '' 
+    });
+    setImagePreview(item.imageUrl || null);
     setIsFormDialogOpen(true);
   };
 
@@ -176,7 +242,7 @@ export default function InventoryPage() {
       </Card>
 
       <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editingItem ? 'Edit Item' : 'Add New Item'}</DialogTitle>
             <DialogDescription>
@@ -184,32 +250,59 @@ export default function InventoryPage() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">Name</Label>
-              <Input id="name" name="name" value={formData.name} onChange={handleInputChange} className="col-span-3" required />
+            <div className="space-y-1">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" name="name" value={formData.name} onChange={handleInputChange} required />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="sku" className="text-right">SKU</Label>
-              <Input id="sku" name="sku" value={formData.sku} onChange={handleInputChange} className="col-span-3" required />
+            <div className="space-y-1">
+              <Label htmlFor="sku">SKU</Label>
+              <Input id="sku" name="sku" value={formData.sku} onChange={handleInputChange} required />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="barcode" className="text-right">Barcode</Label>
-              <Input id="barcode" name="barcode" value={formData.barcode || ''} onChange={handleInputChange} className="col-span-3" placeholder="e.g. 1234567890123"/>
+            <div className="space-y-1">
+              <Label htmlFor="barcode">Barcode</Label>
+              <Input id="barcode" name="barcode" value={formData.barcode || ''} onChange={handleInputChange} placeholder="e.g. 1234567890123"/>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantity" className="text-right">Quantity</Label>
-              <Input id="quantity" name="quantity" type="number" value={formData.quantity} onChange={handleInputChange} className="col-span-3" required min="0" />
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input id="quantity" name="quantity" type="number" value={formData.quantity} onChange={handleInputChange} required min="0" />
+                </div>
+                <div className="space-y-1">
+                <Label htmlFor="price">Price (₦)</Label>
+                <Input id="price" name="price" type="number" step="0.01" value={formData.price} onChange={handleInputChange} required min="0" />
+                </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="price" className="text-right">Price</Label>
-              <Input id="price" name="price" type="number" step="0.01" value={formData.price} onChange={handleInputChange} className="col-span-3" required min="0" />
+            
+            <div className="space-y-2">
+              <Label htmlFor="imageUpload">Product Image</Label>
+              {imagePreview && (
+                <div className="relative group w-32 h-32">
+                  <Image src={imagePreview} alt="Preview" layout="fill" objectFit="cover" className="rounded-md border" />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={removeImage}
+                  >
+                    <XCircle size={14} />
+                  </Button>
+                </div>
+              )}
+              <Input 
+                id="imageUpload" 
+                name="imageUpload" 
+                type="file" 
+                accept="image/png, image/jpeg, image/webp" 
+                onChange={handleImageChange} 
+                ref={fileInputRef}
+                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+              />
+              <p className="text-xs text-muted-foreground">Max file size: 2MB. PNG, JPG, WEBP accepted.</p>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="imageUrl" className="text-right">Image URL</Label>
-              <Input id="imageUrl" name="imageUrl" value={formData.imageUrl} onChange={handleInputChange} className="col-span-3" placeholder="e.g., https://picsum.photos/seed/SKU/200" />
-            </div>
-            <DialogFooter>
-                 <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
+
+            <DialogFooter className="mt-4">
+                 <Button type="button" variant="outline" onClick={closeFormDialog}>Cancel</Button>
               <Button type="submit">{editingItem ? 'Save Changes' : 'Add Item'}</Button>
             </DialogFooter>
           </form>
