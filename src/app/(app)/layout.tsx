@@ -104,7 +104,7 @@ function AppSidebar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="w-full justify-start p-2">
                 <Avatar className="mr-2 h-8 w-8">
-                  <AvatarImage src={`https://picsum.photos/seed/${user.email}/40/40`} data-ai-hint="user avatar" alt={`${user.email} Avatar`} />
+                  <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="user avatar" alt={`${user.email} Avatar`} />
                   <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-start">
@@ -136,7 +136,7 @@ function AppSidebar() {
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="w-full">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src={`https://picsum.photos/seed/${user.email}/40/40`} data-ai-hint="user avatar" alt={`${user.email} Avatar`} />
+                            <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="user avatar" alt={`${user.email} Avatar`} />
                             <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
                         </Avatar>
                     </Button>

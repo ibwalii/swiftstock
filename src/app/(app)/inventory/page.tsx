@@ -194,7 +194,7 @@ export default function InventoryPage() {
                 <TableRow key={item.id}>
                   <TableCell>
                     <Image
-                      src={item.imageUrl || `https://picsum.photos/seed/${item.sku || item.id}/60/60`}
+                      src={item.imageUrl || `https://placehold.co/60x60.png`}
                       alt={item.name}
                       width={60}
                       height={60}
@@ -277,7 +277,7 @@ export default function InventoryPage() {
               <Label htmlFor="imageUpload">Product Image</Label>
               {imagePreview && (
                 <div className="relative group w-32 h-32">
-                  <Image src={imagePreview} alt="Preview" layout="fill" objectFit="cover" className="rounded-md border" />
+                  <Image src={imagePreview} alt="Preview" layout="fill" objectFit="cover" className="rounded-md border" data-ai-hint="image preview" />
                   <Button
                     type="button"
                     variant="destructive"

@@ -445,7 +445,7 @@ export default function POSPage() {
                     <Card key={item.id} className="flex flex-col overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-150 cursor-pointer group" onClick={() => addToCart(item)}>
                       <div className="relative w-full aspect-[4/3]">
                         <Image
-                          src={item.imageUrl || `https://picsum.photos/seed/${item.sku || item.id}/200/150`}
+                          src={item.imageUrl || `https://placehold.co/200x150.png`}
                           alt={item.name}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-200"
