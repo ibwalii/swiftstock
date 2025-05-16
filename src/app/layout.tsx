@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import './globals.css';
@@ -18,7 +19,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body 
         className={`${GeistSans.className} antialiased`} // Use .className for GeistSans
-        suppressHydrationWarning // Add to body as well for extension issues
+        // suppressHydrationWarning was removed from here as it's already on <html>
       >
         <AuthProvider>
           {children}
