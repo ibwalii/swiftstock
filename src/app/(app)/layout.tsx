@@ -13,6 +13,7 @@ import {
   LogOut,
   Loader2,
   User as UserIcon,
+  Users, // Added Users icon
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -41,12 +42,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/app/logo';
 import { Toaster } from '@/components/ui/toaster';
-import { useAuth, type User } from '@/hooks/use-auth';
+import { useAuth, type User } from '@/hooks/use-auth'; // User type is now imported from use-auth
 
 const baseNavItems = [
   { href: '/pos', icon: ShoppingCart, label: 'Point of Sale', tooltip: 'Point of Sale', roles: ['admin', 'cashier'] },
   { href: '/inventory', icon: Package, label: 'Inventory', tooltip: 'Inventory Management', roles: ['admin'] },
   { href: '/invoicing', icon: FileText, label: 'Invoices', tooltip: 'Invoices & Quotations', roles: ['admin', 'cashier'] },
+  { href: '/users', icon: Users, label: 'Users', tooltip: 'User Management', roles: ['admin'] }, // Added User Management
 ];
 
 function getInitials(email?: string | null) {
@@ -181,6 +183,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
+    // This part is handled by the useEffect in useAuth, which redirects.
+    // Displaying a loader here is fine for the brief moment before redirect.
     return (
         <div className="flex h-screen items-center justify-center bg-background">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -207,4 +211,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-

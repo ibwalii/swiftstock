@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Trash2, ShoppingCart, DollarSign, UserCircle, Search, MonitorPlay, Printer, MinusCircle, Barcode, AlertCircle, CheckCircle, CreditCard } from 'lucide-react'; // Added CreditCard for Checkout
+import { PlusCircle, Trash2, ShoppingCart, UserCircle, Search, MonitorPlay, Printer, MinusCircle, Barcode, AlertCircle, CheckCircle, CreditCard } from 'lucide-react'; // Added CreditCard for Checkout
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -310,8 +310,8 @@ export default function POSPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <div className="lg:col-span-4 flex flex-col space-y-3 max-h-full"> 
-        <Card className="flex-grow flex flex-col overflow-hidden"> 
+      <div className="lg:col-span-4 flex flex-col space-y-3"> 
+        <Card className="flex-grow flex flex-col overflow-hidden lg:max-h-[calc(100vh-12rem)]"> 
           <CardHeader className="p-3 border-b">
             <CardTitle className="text-lg">Current Sale</CardTitle>
             <div className="mt-1.5">
@@ -335,7 +335,7 @@ export default function POSPage() {
                 <p className="text-xs">Scan a barcode or add products from the right.</p>
               </div>
             ) : (
-              <ScrollArea className="h-full"> 
+              <ScrollArea className="flex-1"> 
                 <Table className="text-xs">
                   <TableHeader>
                     <TableRow>
@@ -528,4 +528,3 @@ export default function POSPage() {
     </div>
   );
 }
-
