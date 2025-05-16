@@ -17,9 +17,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body 
-        className={`${GeistSans.className} antialiased`} // Use .className for GeistSans
-        // suppressHydrationWarning was removed from here as it's already on <html>
+      <body
+        className={`${GeistSans.className} antialiased`}
+        suppressHydrationWarning={true} // Added here as well
       >
         <AuthProvider>
           {children}
