@@ -32,37 +32,55 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserInternal] = useLocalStorage<User | null>(LOGGED_IN_USER_KEY, null);
-  const [allUsers, setAllUsersInternal] = useLocalStorage<UserWithPassword[]>(ALL_USERS_KEY, []);
+  // Use stable initialDemoUsers as the initialValue for allUsers
+  const [allUsers, setAllUsersInternal] = useLocalStorage<UserWithPassword[]>(ALL_USERS_KEY, initialDemoUsers);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    // Seed demo users if the list is empty
-    if (allUsers.length === 0) {
-      setAllUsersInternal(initialDemoUsers);
-    }
-    // Check if there's a logged-in user from a previous session
-    const storedLoggedInUser = localStorage.getItem(LOGGED_IN_USER_KEY);
-    if (storedLoggedInUser) {
+    // This effect now primarily focuses on setting isLoadingAuth
+    // and validating a potentially existing logged-in user against the (now stable) allUsers list.
+    const storedLoggedInUserJson = typeof window !== 'undefined' ? window.localStorage.getItem(LOGGED_IN_USER_KEY) : null;
+    if (storedLoggedInUserJson) {
         try {
-            const parsedUser = JSON.parse(storedLoggedInUser) as User;
-            // Ensure this user still exists in our main user list and roles are valid
-            const userExists = allUsers.find(u => u.id === parsedUser.id && u.email === parsedUser.email);
-            if (userExists && (parsedUser.role === 'admin' || parsedUser.role === 'cashier')) {
-                 // setUserInternal(parsedUser); // useLocalStorage should handle this
-            } else {
-                localStorage.removeItem(LOGGED_IN_USER_KEY); // Clear invalid stored logged-in user
-                // setUserInternal(null); // useLocalStorage handles this
+            const storedLoggedInUser = JSON.parse(storedLoggedInUserJson) as User;
+            // Check if this user exists in the current allUsers list (which might have been initialized from localStorage or initialDemoUsers)
+            const userStillExistsAndValid = allUsers.some(
+              u => u.id === storedLoggedInUser.id && 
+                   u.email === storedLoggedInUser.email && 
+                   (u.role === 'admin' || u.role === 'cashier')
+            );
+
+            if (!userStillExistsAndValid) {
+                // If the stored user is no longer valid (e.g., deleted or role changed in a way that's inconsistent),
+                // clear the logged-in user state.
+                setUserInternal(null); // This will also clear it from localStorage via useLocalStorage's setValue
+            } else if (!user || user.id !== storedLoggedInUser.id) {
+                // If the current 'user' state is not set or doesn't match the valid stored user, update it.
+                // This ensures the AuthContext 'user' is correctly initialized from a valid persisted session.
+                // Note: useLocalStorage's useState initializer should ideally handle this based on localStorage.
+                // This explicit setUserInternal might be redundant if useLocalStorage is robust.
+                // However, to be safe, if there's a mismatch, we align.
+                 const liveUser = allUsers.find(u => u.id === storedLoggedInUser.id);
+                 if (liveUser) {
+                    const { password, ...userToStore } = liveUser;
+                    setUserInternal(userToStore);
+                 } else {
+                    setUserInternal(null);
+                 }
             }
         } catch (e) {
-            console.error("Error parsing stored logged-in user:", e);
-            localStorage.removeItem(LOGGED_IN_USER_KEY);
-            // setUserInternal(null);
+            console.error("Error processing stored logged-in user:", e);
+            setUserInternal(null);
         }
     }
     setIsLoadingAuth(false);
-  }, [allUsers, setAllUsersInternal]);
+  // Run this effect once on mount.
+  // allUsers is from useLocalStorage, it will be initialized from localStorage or initialDemoUsers.
+  // setUserInternal is stable.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const setUser = (newUser: User | null) => {
@@ -74,10 +92,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const login = useCallback(async (credentials: { email: string; pass: string }, redirectTo: string = '/pos') => {
-    const foundUser = allUsers.find(u => u.email === credentials.email && u.password === credentials.pass); // Plain text password check (DEMO ONLY)
+    const foundUser = allUsers.find(u => u.email === credentials.email && u.password === credentials.pass);
 
     if (foundUser) {
-      const { password, ...userToStore } = foundUser; // Don't store password in logged-in user state/storage
+      const { password, ...userToStore } = foundUser;
       setUser(userToStore);
       router.push(redirectTo);
       return true;
@@ -95,8 +113,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, message: 'User with this email already exists.' };
     }
     const newUserWithId: UserWithPassword = { ...userData, id: uuidv4() };
-    // In a real app, password would be hashed here before saving.
-    // For demo, storing as is.
     setAllUsers(prevUsers => [...prevUsers, newUserWithId]);
     const { password, ...addedUser } = newUserWithId;
     return { success: true, user: addedUser };
@@ -112,7 +128,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const updatedUsers = [...prevUsers];
       updatedUsers[userIndex] = { ...updatedUsers[userIndex], role: newRole };
       success = true;
-      // If the updated user is the currently logged-in user, update their session too
       if (user && user.id === userId) {
         setUser({ ...user, role: newRole });
       }
@@ -169,3 +184,4 @@ export function useAuth(): AuthContextType {
   }
   return context;
 }
+
