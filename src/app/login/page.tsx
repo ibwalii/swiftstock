@@ -103,7 +103,6 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col items-center justify-center text-xs text-muted-foreground pb-8 pt-4 space-y-1">
           <p className='font-medium'>Demo Credentials:</p>
           <p>Admin: admin@example.com / Password: password</p>
-          <p>Cashier: cashier@example.com / Password: password</p>
         </CardFooter>
       </Card>
        <p className="mt-8 text-xs text-muted-foreground">
