@@ -8,6 +8,12 @@ export interface InvoiceItem {
   subtotal: number;
 }
 
+export interface CreatedByInfo {
+  uid: string;
+  email: string | null;
+  // displayName?: string | null; // Add if you plan to store/use displayName
+}
+
 export interface Invoice {
   id: string;
   invoiceNumber: string;
@@ -15,7 +21,7 @@ export interface Invoice {
   customerName: string; // Simplified for now, could be an object or ID
   items: InvoiceItem[];
   totalAmount: number;
-  paymentMethod?: string; 
+  paymentMethod?: string;
+  createdBy: CreatedByInfo;
   // notes?: string;
 }
-

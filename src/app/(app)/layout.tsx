@@ -13,7 +13,7 @@ import {
   LogOut,
   Loader2,
   User as UserIcon,
-  Users, // Added Users icon
+  Users,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -42,13 +42,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/app/logo';
 import { Toaster } from '@/components/ui/toaster';
-import { useAuth, type User } from '@/hooks/use-auth'; // User type is now imported from use-auth
+import { useAuth, type User } from '@/hooks/use-auth';
 
 const baseNavItems = [
   { href: '/pos', icon: ShoppingCart, label: 'Point of Sale', tooltip: 'Point of Sale', roles: ['admin', 'cashier'] },
   { href: '/inventory', icon: Package, label: 'Inventory', tooltip: 'Inventory Management', roles: ['admin'] },
   { href: '/invoicing', icon: FileText, label: 'Invoices', tooltip: 'Invoices & Quotations', roles: ['admin', 'cashier'] },
-  { href: '/users', icon: Users, label: 'Users', tooltip: 'User Management', roles: ['admin'] }, // Added User Management
+  { href: '/users', icon: Users, label: 'Users', tooltip: 'User Management', roles: ['admin'] },
 ];
 
 function getInitials(email?: string | null) {
@@ -166,7 +166,7 @@ function AppSidebar() {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoadingAuth } = useAuth(); // Use `user` instead of `isLoggedIn` for more context
+  const { user, isLoadingAuth } = useAuth(); 
   const [clientRendered, setClientRendered] = React.useState(false);
 
   React.useEffect(() => {
@@ -183,8 +183,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    // This part is handled by the useEffect in useAuth, which redirects.
-    // Displaying a loader here is fine for the brief moment before redirect.
     return (
         <div className="flex h-screen items-center justify-center bg-background">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -198,10 +196,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-md md:px-6">
-          <SidebarTrigger className="md:hidden" />
+          <SidebarTrigger /> {/* Ensure SidebarTrigger is always rendered */}
           <div className="flex-1">
             {/* Page specific title could go here, managed by pages */}
           </div>
+          {/* You can add other header elements here if needed */}
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6">
           {children}
