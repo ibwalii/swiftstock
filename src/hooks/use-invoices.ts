@@ -4,7 +4,7 @@
 import type { Invoice, CreatedByInfo } from '@/types/invoice';
 import { useLocalStorage } from './use-local-storage';
 import { v4 as uuidv4 } from 'uuid';
-import { useAuth } from './use-auth'; // Import useAuth
+import { useAuth } from './use-auth'; 
 
 const INVOICES_STORAGE_KEY = 'swiftstock-invoices';
 const initialInvoices: Invoice[] = [];
@@ -14,19 +14,17 @@ export function useInvoices() {
     INVOICES_STORAGE_KEY,
     initialInvoices
   );
-  const { user } = useAuth(); // Get the current user
+  const { user } = useAuth(); 
 
   const addInvoice = (invoiceData: Omit<Invoice, 'id' | 'invoiceNumber' | 'date' | 'createdBy'>): Invoice => {
     if (!user) {
-      // This should ideally not happen if UI prevents invoice creation when not logged in
-      // Or, handle this more gracefully, perhaps by disallowing invoice creation
       throw new Error("User must be logged in to create an invoice.");
     }
 
     const createdByInfo: CreatedByInfo = {
-      uid: user.id, // Assuming user.id from useAuth is the UID
+      uid: user.id,
       email: user.email,
-      // displayName: user.displayName || null, // Add if displayName is available and needed
+      displayName: user.name || user.email, // Use user.name, fallback to email
     };
 
     const newInvoice: Invoice = {
@@ -36,7 +34,7 @@ export function useInvoices() {
       date: new Date().toISOString(),
       createdBy: createdByInfo,
     };
-    setInvoices((prevInvoices) => [newInvoice, ...prevInvoices]); // Add new invoices to the top
+    setInvoices((prevInvoices) => [newInvoice, ...prevInvoices]);
     return newInvoice;
   };
 

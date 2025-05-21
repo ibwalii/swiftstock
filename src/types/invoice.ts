@@ -11,17 +11,16 @@ export interface InvoiceItem {
 export interface CreatedByInfo {
   uid: string;
   email: string | null;
-  // displayName?: string | null; // Add if you plan to store/use displayName
+  displayName?: string | null; // Added displayName
 }
 
 export interface Invoice {
   id: string;
   invoiceNumber: string;
   date: string; // ISO string for date
-  customerName: string; // Simplified for now, could be an object or ID
+  customerName: string; 
   items: InvoiceItem[];
   totalAmount: number;
   paymentMethod?: string;
   createdBy: CreatedByInfo;
-  // notes?: string;
 }

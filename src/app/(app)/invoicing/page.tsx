@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Eye, FileText, Search } from 'lucide-react';
+import { Eye, FileText, Search, User as UserIcon } from 'lucide-react'; // Added UserIcon
 import { Input } from '@/components/ui/input';
 
 export default function InvoicingPage() {
@@ -40,6 +40,8 @@ export default function InvoicingPage() {
       (invoice) =>
         invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (invoice.createdBy?.displayName && invoice.createdBy.displayName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (invoice.createdBy?.email && invoice.createdBy.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
         new Date(invoice.date).toLocaleDateString().includes(searchTerm)
     );
   }, [invoices, searchTerm]);
@@ -63,8 +65,8 @@ export default function InvoicingPage() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search invoices by number, customer, or date..."
-              className="pl-8 w-full md:w-1/2 lg:w-1/3"
+              placeholder="Search by invoice #, customer, salesperson, or date..."
+              className="pl-8 w-full md:w-1/2 lg:w-2/3" // Increased width
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -87,6 +89,7 @@ export default function InvoicingPage() {
                   <TableHead>Invoice #</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Customer</TableHead>
+                  <TableHead>Salesperson</TableHead> {/* Added Salesperson Column */}
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead className="text-right w-[100px]">Actions</TableHead>
                 </TableRow>
@@ -97,6 +100,7 @@ export default function InvoicingPage() {
                     <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                     <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
                     <TableCell>{invoice.customerName}</TableCell>
+                    <TableCell>{invoice.createdBy?.displayName || invoice.createdBy?.email || 'N/A'}</TableCell> {/* Display Salesperson */}
                     <TableCell className="text-right">₦{invoice.totalAmount.toFixed(2)}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" onClick={() => handleViewInvoice(invoice)}>
@@ -108,7 +112,7 @@ export default function InvoicingPage() {
               </TableBody>
               <TableFooter>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableCell colSpan={3} className="font-semibold text-lg">Total Revenue</TableCell>
+                  <TableCell colSpan={4} className="font-semibold text-lg">Total Revenue</TableCell> {/* Adjusted colSpan */}
                   <TableCell className="text-right font-semibold text-lg">₦{totalRevenue.toFixed(2)}</TableCell>
                   <TableCell />
                 </TableRow>
@@ -126,7 +130,8 @@ export default function InvoicingPage() {
               <DialogTitle>Invoice Details - {selectedInvoice.invoiceNumber}</DialogTitle>
               <DialogDescription>
                 <strong>Customer:</strong> {selectedInvoice.customerName} <br />
-                <strong>Date:</strong> {new Date(selectedInvoice.date).toLocaleDateString()}
+                <strong>Date:</strong> {new Date(selectedInvoice.date).toLocaleDateString()} <br />
+                <strong>Salesperson:</strong> {selectedInvoice.createdBy?.displayName || selectedInvoice.createdBy?.email || 'N/A'}
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[60vh] my-4 pr-4">
@@ -160,7 +165,7 @@ export default function InvoicingPage() {
               </Table>
             </ScrollArea>
             <DialogFooter>
-               <Button variant="outline" onClick={() => { /* Logic for printing could go here */ alert('Printing invoice...'); setIsDialogOpen(false); }}>Print Invoice</Button>
+               <Button variant="outline" onClick={() => { alert('Printing invoice...'); setIsDialogOpen(false); }}>Print Invoice</Button>
               <DialogClose asChild>
                 <Button type="button">Close</Button>
               </DialogClose>
@@ -171,4 +176,3 @@ export default function InvoicingPage() {
     </div>
   );
 }
-

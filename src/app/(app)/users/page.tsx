@@ -20,7 +20,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,9 +33,10 @@ import {
 import { PlusCircle, Edit2, Trash2, Users, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const initialFormState: Omit<UserWithPassword, 'id'> = {
+  name: '',
   email: '',
   password: '',
   role: 'cashier',
@@ -47,7 +47,7 @@ export default function UserManagementPage() {
   const { toast } = useToast();
 
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserWithPassword | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null); // Store User, not UserWithPassword
   const [formData, setFormData] = useState<Omit<UserWithPassword, 'id'>>(initialFormState);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,12 +61,16 @@ export default function UserManagementPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name && !editingUser) { // Name required only for new users
+      toast({ title: "Validation Error", description: "Name is required for new users.", variant: "destructive" });
+      return;
+    }
     if (!formData.email) {
       toast({ title: "Validation Error", description: "Email is required.", variant: "destructive" });
       return;
     }
+
     if (editingUser) {
-      // Update role
       if (editingUser.id === currentUser?.id && formData.role === 'cashier' && currentUser.role === 'admin') {
         const otherAdmins = allUsers.filter(u => u.role === 'admin' && u.id !== currentUser.id);
         if (otherAdmins.length === 0) {
@@ -74,9 +78,10 @@ export default function UserManagementPage() {
             return;
         }
       }
+      // For now, user update only handles role. Name update could be added later if needed.
       const result = await updateUserRole(editingUser.id, formData.role);
       if (result.success) {
-        toast({ title: 'User Updated', description: `${formData.email}'s role has been updated.` });
+        toast({ title: 'User Updated', description: `${editingUser.email}'s role has been updated.` });
       } else {
         toast({ title: 'Update Failed', description: result.message || 'Could not update user.', variant: 'destructive' });
       }
@@ -86,7 +91,7 @@ export default function UserManagementPage() {
         toast({ title: "Validation Error", description: "Password must be at least 6 characters.", variant: "destructive" });
         return;
       }
-      const result = await addUser({ email: formData.email, password: formData.password, role: formData.role });
+      const result = await addUser({ name: formData.name, email: formData.email, password: formData.password, role: formData.role });
       if (result.success) {
         toast({ title: 'User Added', description: `${formData.email} has been added successfully.` });
       } else {
@@ -108,13 +113,14 @@ export default function UserManagementPage() {
     setIsFormDialogOpen(true);
   };
 
-  const openEditDialog = (userToEdit: UserWithPassword) => {
+  const openEditDialog = (userToEdit: User) => { // Takes User type
     setEditingUser(userToEdit);
-    setFormData({ email: userToEdit.email, role: userToEdit.role, password: '' }); // Password field not used for role edit
+    // Password field not used for role edit, name is displayed but not editable for role changes
+    setFormData({ name: userToEdit.name, email: userToEdit.email, role: userToEdit.role, password: '' });
     setIsFormDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async (userId: string, userName: string) => {
+  const handleDeleteConfirm = async (userId: string, userDisplayName: string) => {
     if (currentUser?.id === userId) {
         toast({ title: "Action Denied", description: "You cannot delete yourself.", variant: "destructive" });
         return;
@@ -130,7 +136,7 @@ export default function UserManagementPage() {
 
     const result = await deleteUser(userId);
     if (result.success) {
-      toast({ title: 'User Deleted', description: `${userName} has been deleted.`, variant: 'destructive' });
+      toast({ title: 'User Deleted', description: `User "${userDisplayName}" has been deleted.`, variant: 'destructive' });
     } else {
       toast({ title: 'Delete Failed', description: result.message || 'Could not delete user.', variant: 'destructive' });
     }
@@ -143,7 +149,7 @@ export default function UserManagementPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-2xl">User Management</CardTitle>
-            <CardDescription>Add, edit, or delete users.</CardDescription>
+            <CardDescription>Add, edit roles, or delete users.</CardDescription>
           </div>
           <Button onClick={openAddDialog} className="flex items-center gap-2">
             <PlusCircle size={18} /> Add New User
@@ -160,6 +166,7 @@ export default function UserManagementPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead className="text-center w-[130px]">Actions</TableHead>
@@ -168,7 +175,8 @@ export default function UserManagementPage() {
             <TableBody>
               {allUsers.map((userItem) => (
                 <TableRow key={userItem.id}>
-                  <TableCell className="font-medium">{userItem.email}</TableCell>
+                  <TableCell className="font-medium">{userItem.name}</TableCell>
+                  <TableCell>{userItem.email}</TableCell>
                   <TableCell className="capitalize">{userItem.role}</TableCell>
                   <TableCell className="text-center">
                     <Button variant="ghost" size="icon" onClick={() => openEditDialog(userItem)} className="mr-1 hover:text-primary">
@@ -180,7 +188,7 @@ export default function UserManagementPage() {
                             variant="ghost" 
                             size="icon" 
                             className="text-destructive hover:text-destructive/80"
-                            disabled={currentUser?.id === userItem.id} // Disable delete for self
+                            disabled={currentUser?.id === userItem.id}
                         >
                           <Trash2 size={16} />
                         </Button>
@@ -189,12 +197,12 @@ export default function UserManagementPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the user "{userItem.email}".
+                            This action cannot be undone. This will permanently delete the user "{userItem.name}" ({userItem.email}).
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteConfirm(userItem.id, userItem.email)} className="bg-destructive hover:bg-destructive/90">
+                          <AlertDialogAction onClick={() => handleDeleteConfirm(userItem.id, userItem.name)} className="bg-destructive hover:bg-destructive/90">
                             Yes, delete user
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -214,10 +222,14 @@ export default function UserManagementPage() {
           <DialogHeader>
             <DialogTitle>{editingUser ? 'Edit User Role' : 'Add New User'}</DialogTitle>
             <DialogDescription>
-              {editingUser ? 'Update the role for this user.' : 'Fill in the details for the new user.'}
+              {editingUser ? `Update the role for ${editingUser.name}. Name and email cannot be changed here.` : 'Fill in the details for the new user.'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+            <div className="space-y-1">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" name="name" value={formData.name} onChange={handleInputChange} required={!editingUser} disabled={!!editingUser} />
+            </div>
             <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} required disabled={!!editingUser} />
@@ -226,7 +238,7 @@ export default function UserManagementPage() {
               <div className="space-y-1">
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} required minLength={6} />
-                <p className="text-xs text-muted-foreground">Min 6 characters. Stored as-is for demo purposes.</p>
+                <p className="text-xs text-muted-foreground">Min 6 characters.</p>
               </div>
             )}
             <div className="space-y-1">
@@ -244,7 +256,7 @@ export default function UserManagementPage() {
 
             <DialogFooter className="mt-4">
                  <Button type="button" variant="outline" onClick={closeFormDialog}>Cancel</Button>
-              <Button type="submit">{editingUser ? 'Save Changes' : 'Add User'}</Button>
+              <Button type="submit">{editingUser ? 'Save Role Change' : 'Add User'}</Button>
             </DialogFooter>
           </form>
            {editingUser && editingUser.id === currentUser?.id && editingUser.role === 'admin' && allUsers.filter(u => u.role === 'admin').length === 1 && (
