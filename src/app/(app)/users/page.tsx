@@ -33,7 +33,7 @@ import {
 import { PlusCircle, Edit2, Trash2, Users, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const initialFormState: Omit<UserWithPassword, 'id'> = {
   name: '',
@@ -270,3 +270,4 @@ export default function UserManagementPage() {
     </div>
   );
 }
+
